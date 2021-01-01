@@ -1,0 +1,19 @@
+Dec 17 2020
+
+-- Need a GUI, so we can adjust & check the centroid images. 
+-- Need consistent numbering on the centroids.  Sometimes it misses some, which changes the meaning - ! 
+-- Need to figure out how to convert pixel coordinates into waves or at least physical units. 
+-- Some centroids are noisier than others; may have to weight individual centroids. 
+
+Dec 18 2020
+
+Have a gui -- repurposed from the sewing machine project -- seems to work well enough. 
+Am thinking that we start with numbering and locations from the reference flat, which can be loaded at the start of the program. 
+Need to read a matlab file via libmatio.. 
+
+More importantly, will this wavefront sensor have sufficient precision to stabilize the deformable mirror?  
+I guess if there are slow drifts over the whole aperture, probaby not --
+to detect slight tip/tilt, on the order of many waves at the edges, you need to average over all the lenslets.  
+To increase the sensitivity, we need to increase the focal length.
+(Which of course decreases the dynamic range..)
+The thorlabs WFS have a focal length of 4.1mm; we are using an array with a fl of 3.17mm.  So, they should be in the same ballpark..
