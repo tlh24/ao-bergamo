@@ -46,8 +46,8 @@ int g_lensSpanH = 35;
 int g_nFrames = 0;
 bool g_calibrated = false; 
 
-float g_pixthresh = 85.0/255.0; 
-float g_sumthresh = 4.0; 
+float g_pixthresh = 75.0/255.0; 
+float g_sumthresh = 3.0; 
 
 int g_exposure = 2000; 
 bool g_set_exposure = true; 
@@ -401,9 +401,11 @@ void* video_thread(void*){
 	}
 	pthread_t dm_thread;
 	pthread_create( &dm_thread, &attr, dmControl_thread, (void*)dm_data); 
+	dm_semaphore = new Semaphore(); 
+	
 	//init gaussian random number generator, too
 	std::default_random_engine generator;
-	std::normal_distribution<float> distribution(0.0,0.05);
+	std::normal_distribution<float> distribution(0.0,0.025);
 	
 	try{
 		CInstantCamera camera( CTlFactory::GetInstance().CreateFirstDevice());
@@ -468,22 +470,25 @@ void* video_thread(void*){
 				g_framerate_label.set(1.0 / (start - lastFrameTime));
 				g_dataSize_label.set((float)centroidVec->nstored()); 
 				lastFrameTime = start; 
-				if(g_record_data && (g_nFrames%5 == 4 || 1)){ 
-					for(int i=0; i<g_nCentroids && i<3000; i++){
-						centroidVec->m_stor[i] = g_centroids[i][0]; 
-						centroidVec->m_stor2[i] = g_centroids[i][1]; 
+				if(g_nFrames%5 == 4){
+					if(g_record_data){ 
+						for(int i=0; i<g_nCentroids && i<3000; i++){
+							centroidVec->m_stor[i] = g_centroids[i][0]; 
+							centroidVec->m_stor2[i] = g_centroids[i][1]; 
+						}
+						for(int i=0; i<97; i++){
+							dmVec->m_stor[i] = dm_data[i]; 
+						}
+						centroidVec->store(); 
+						dmVec->store(); 
 					}
-					for(int i=0; i<97; i++){
-						dmVec->m_stor[i] = dm_data[i]; 
-					}
-					centroidVec->store(); 
-					dmVec->store(); 
 					//generate a new dm command signal. 
 					for(int i=0; i<97; i++){
 						dm_data[i] = distribution(generator);
 						if(dm_data[i] > 0.15) dm_data[i] = 0.15; 
 						if(dm_data[i] <-0.15) dm_data[i] =-0.15; 
 					}
+					dm_semaphore->notify(); 
 				}
 				memcpy(mmap_ptr, g_centroids, MAX_LENSLETS*2*4); 
 			}
@@ -557,6 +562,10 @@ void* video_thread(void*){
 	
 	free(g_data[0]); 
 	g_data[0] = NULL; 
+	
+	dm_semaphore->notify(); 
+	void* ptr; 
+	pthread_join(dm_thread, &ptr); 
 	
 	if (munmap(mmap_ptr, MAX_LENSLETS*8) < 0) {
 		perror("Could not unmap file");

@@ -22,7 +22,7 @@ void* dmControl_thread(void* writeData)
 {
 	float* fdata = (float*)writeData; 
 	String serial;
-	serial = "BAX390"; 
+	serial = "AlpaoLib/BAX390"; 
 
 	// Load configuration file
 	DM dm( serial.c_str() );
@@ -32,11 +32,10 @@ void* dmControl_thread(void* writeData)
 
 	// Check errors
 	if ( !dm.Check() ){
+		cout << "deformable mirror is not responding" << endl; 
 		return NULL;
 	}
 	cout << "Number of actuators: " << nbAct << endl;
-	
-	dm_semaphore = new Semaphore(); 
 
 	// Initialize data
 	Scalar *data = new Scalar[nbAct];
@@ -51,11 +50,10 @@ void* dmControl_thread(void* writeData)
 			data[i] = fdata[i]; 
 		// Send value to the DM
 		dm.Send( data );
-		cout << "Done." << endl;
-		DM::PrintLastError();
+		//cout << "Done." << endl;
 	}
 	// Release memory
 	delete [] data;
-
+	DM::PrintLastError();
 	return NULL;
 }

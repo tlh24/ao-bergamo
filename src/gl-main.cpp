@@ -218,11 +218,11 @@ static gboolean init_shaders () {
 	for(int i=0; i<3; i++){
 		/* load the vertex shader */
 		if(i == 0)
-			src = read_txt_file("vertex.glsl");
+			src = read_txt_file("gl/vertex.glsl");
 		else if(i == 1)
-			src = read_txt_file("vertex_flat.glsl");
+			src = read_txt_file("gl/vertex_flat.glsl");
 		else if(i == 2)
-			src = read_txt_file("text.v.glsl");
+			src = read_txt_file("gl/text.v.glsl");
 
 		if(src){
 			create_shader (GL_VERTEX_SHADER, src, &vertex);
@@ -231,11 +231,11 @@ static gboolean init_shaders () {
 
 		/* load the fragment shader */
 		if(i == 0)
-			src = read_txt_file("fragment.glsl"); 
+			src = read_txt_file("gl/fragment.glsl"); 
 		else if(i == 1)
-			src = read_txt_file("fragment_flat.glsl"); 
+			src = read_txt_file("gl/fragment_flat.glsl"); 
 		else if(i == 2)
-			src = read_txt_file("text.f.glsl");
+			src = read_txt_file("gl/text.f.glsl");
 		if(src){
 			create_shader (GL_FRAGMENT_SHADER, src, &fragment);
 			free(src); 

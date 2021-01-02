@@ -25,4 +25,4 @@ shwfs: $(OBJS)
 
 clean:
 	rm -rf $(OBJS)
-	rm -rf $(NAME)
+	rm -rf shwfs
