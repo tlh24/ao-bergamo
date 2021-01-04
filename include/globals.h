@@ -10,6 +10,8 @@ extern unsigned int g_h;
 extern unsigned int g_s[4]; // in bytes. 
 extern unsigned char g_copy[4]; 
 
+void printf_log(const char* fmt, ...);
+
 class Gtk_UpdateLabel{
 	// for displaying online metrics etc. 
 private:

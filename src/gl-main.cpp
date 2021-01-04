@@ -895,7 +895,7 @@ GtkWidget *create_gl_window(){
 	int i=0; 
 	char lbl[128]; 
 	snprintf(lbl, 128, "Exposure %d", i); 
-	g_exposureSpin[i] = mk_spinner(lbl, bx2, 2800, 50 , 10000, 50, 
+	g_exposureSpin[i] = mk_spinner(lbl, bx2, 50, 50 , 1000, 10	, 
 											updateExposureCB, GINT_TO_POINTER(0)); 
 	
 	

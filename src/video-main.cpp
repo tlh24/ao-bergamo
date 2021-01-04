@@ -46,7 +46,7 @@ int g_lensSpanH = 35;
 int g_nFrames = 0;
 bool g_calibrated = false; 
 
-float g_pixthresh = 75.0/255.0; 
+float g_pixthresh = 90.0/255.0; 
 float g_sumthresh = 3.0; 
 
 int g_exposure = 2000; 
@@ -54,6 +54,9 @@ bool g_set_exposure = true;
 bool g_reset_data = false;
 bool g_record_data = false; 
 bool g_write_data = false; 
+
+int g_dm_actuator = 0; 
+int g_dm_counter = 0;
 
 void init_centroids(const unsigned char* image, 
 						  int sx, int sy){
@@ -471,7 +474,7 @@ void* video_thread(void*){
 				g_dataSize_label.set((float)centroidVec->nstored()); 
 				lastFrameTime = start; 
 				if(g_nFrames%5 == 4){
-					if(g_record_data){ 
+					if(g_record_data && centroidVec->nstored() < 180000){ 
 						for(int i=0; i<g_nCentroids && i<3000; i++){
 							centroidVec->m_stor[i] = g_centroids[i][0]; 
 							centroidVec->m_stor2[i] = g_centroids[i][1]; 
@@ -482,11 +485,30 @@ void* video_thread(void*){
 						centroidVec->store(); 
 						dmVec->store(); 
 					}
-					//generate a new dm command signal. 
-					for(int i=0; i<97; i++){
-						dm_data[i] = distribution(generator);
-						if(dm_data[i] > 0.15) dm_data[i] = 0.15; 
-						if(dm_data[i] <-0.15) dm_data[i] =-0.15; 
+					if(0){
+						//generate a new dm command signal. 
+						for(int i=0; i<97; i++){
+							dm_data[i] = distribution(generator);
+							if(dm_data[i] > 0.15) dm_data[i] = 0.15; 
+							if(dm_data[i] <-0.15) dm_data[i] =-0.15; 
+						}
+					}else{
+						for(int i=0; i<97; i++){
+							dm_data[i] = 0.f;
+						}
+						if(g_dm_counter %1 == 0){
+							dm_data[g_dm_actuator] = -0.15; 
+						}else{
+							dm_data[g_dm_actuator] = 0.15; 
+						}
+						g_dm_counter++; 
+						if(g_dm_counter > 10){
+							g_dm_counter = 0; 
+							g_dm_actuator++; 
+							if(g_dm_actuator > 97)
+								g_dm_actuator = 0; 
+							printf_log("DM actuator %d\n", g_dm_actuator); 
+						}
 					}
 					dm_semaphore->notify(); 
 				}

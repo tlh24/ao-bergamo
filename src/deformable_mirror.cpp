@@ -45,7 +45,7 @@ void* dmControl_thread(void* writeData)
 
 	while(!g_die){
 		dm_semaphore->wait(); 
-		cout << "Sending data to mirrors" << endl;
+		//cout << "Sending data to mirrors" << endl;
 		for(int i=0; i<nbAct; i++)
 			data[i] = fdata[i]; 
 		// Send value to the DM
