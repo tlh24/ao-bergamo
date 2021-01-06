@@ -82,6 +82,7 @@ extern float g_centroidsCalib[MAX_LENSLETS][2];
 extern int g_lensletStarts[MAX_LENSLETS][2];
 extern int g_nCentroids;
 extern int g_exposure; 
+extern int g_actuator; 
 extern bool g_set_exposure; 
 extern bool g_calibrated; 
 extern bool g_reset_data; //clear memory

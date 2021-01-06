@@ -5,12 +5,12 @@ PYLON_ROOT ?= /opt/pylon
 CPPFLAGS   := $(shell $(PYLON_ROOT)/bin/pylon-config --cflags) 
 GLIBS := gtk+-3.0
 CPPFLAGS   += $(shell pkg-config --cflags $(GLIBS)) -I./include
-CPPFLAGS   += -g
+CPPFLAGS   += -O3
 LDFLAGS    := $(shell $(PYLON_ROOT)/bin/pylon-config --libs-rpath)
-LDLIBS     := $(shell $(PYLON_ROOT)/bin/pylon-config --libs)
+LDLIBS     := $(shell $(PYLON_ROOT)/bin/pylon-config --libs) 
 LDLIBS     += $(shell pkg-config --libs $(GLIBS))
-LDLIBS     += -lpng -lrt -lmatio -lpthread -lGL -lGLEW -lgsl -lgslcblas -lfreetype 
-LDLIBS	 += -L/AlpaoLib/x64/ -lasdk
+LDLIBS     += -lasdk -lpng -lrt -lmatio -lpthread -lGL -lGLEW -lgsl -lgslcblas -lfreetype 
+
 
 OBJS := src/video-main.o src/gl-main.o src/deformable_mirror.o src/gettime.o src/writematlab.o src/text_helper.o
 
@@ -26,3 +26,8 @@ shwfs: $(OBJS)
 clean:
 	rm -rf $(OBJS)
 	rm -rf shwfs
+
+deps: 
+	sudo apt-get install libpng-dev libgtk-3-dev libmatio-dev \
+	libglew-dev libfreetype-dev libgsl-dev freeglut3-dev \
+	libglm-dev 

@@ -46,10 +46,11 @@ int g_lensSpanH = 35;
 int g_nFrames = 0;
 bool g_calibrated = false; 
 
-float g_pixthresh = 90.0/255.0; 
+float g_pixthresh = 70.0/255.0; 
 float g_sumthresh = 3.0; 
 
-int g_exposure = 2000; 
+int g_exposure = 50; 
+int g_actuator = 0; 
 bool g_set_exposure = true; 
 bool g_reset_data = false;
 bool g_record_data = false; 
@@ -408,7 +409,7 @@ void* video_thread(void*){
 	
 	//init gaussian random number generator, too
 	std::default_random_engine generator;
-	std::normal_distribution<float> distribution(0.0,0.025);
+	std::normal_distribution<float> distribution(0.0,0.018);
 	
 	try{
 		CInstantCamera camera( CTlFactory::GetInstance().CreateFirstDevice());
@@ -485,30 +486,41 @@ void* video_thread(void*){
 						centroidVec->store(); 
 						dmVec->store(); 
 					}
+					for(int i=0; i<97; i++){
+						dm_data[i] = 0.f;
+					}
 					if(0){
 						//generate a new dm command signal. 
 						for(int i=0; i<97; i++){
 							dm_data[i] = distribution(generator);
-							if(dm_data[i] > 0.15) dm_data[i] = 0.15; 
-							if(dm_data[i] <-0.15) dm_data[i] =-0.15; 
+							if(dm_data[i] > 0.10) dm_data[i] = 0.10; 
+							if(dm_data[i] <-0.10) dm_data[i] =-0.10; 
 						}
-					}else{
-						for(int i=0; i<97; i++){
-							dm_data[i] = 0.f;
-						}
-						if(g_dm_counter %1 == 0){
-							dm_data[g_dm_actuator] = -0.15; 
-						}else{
-							dm_data[g_dm_actuator] = 0.15; 
+					}
+					if(0){
+						//need to encode actuator positions into RWC
+						float scl = 1.f; 
+						if(g_dm_counter & 0x1){
+							scl *= -1.f; 
 						}
 						g_dm_counter++; 
-						if(g_dm_counter > 10){
-							g_dm_counter = 0; 
-							g_dm_actuator++; 
-							if(g_dm_actuator > 97)
-								g_dm_actuator = 0; 
-							printf_log("DM actuator %d\n", g_dm_actuator); 
+						dm_data[60] = dm_data[49] = dm_data[38] = scl * 0.08; 
+						dm_data[59] = dm_data[48] = dm_data[37] = scl * 0.08; 
+						dm_data[58] = dm_data[47] = dm_data[36] = scl * 0.08; 
+						dm_data[72] = dm_data[61] = dm_data[50] = dm_data[39] = dm_data[28] = scl * 0.05; 
+						dm_data[68] = dm_data[57] = dm_data[46] = dm_data[35] = dm_data[24] = scl * 0.05; 
+						dm_data[71] = dm_data[70] = dm_data[69] = scl * 0.05; 
+						dm_data[27] = dm_data[26] = dm_data[25] = scl * 0.05; 
+					}
+					if(0){
+						if(g_actuator > 96) g_actuator = 96; 
+						if(g_actuator < 0) g_actuator = 0; 
+						if(g_dm_counter & 0x1){
+							dm_data[g_actuator] = -0.10; 
+						}else{
+							dm_data[g_actuator] = 0.10; 
 						}
+						g_dm_counter++; 
 					}
 					dm_semaphore->notify(); 
 				}

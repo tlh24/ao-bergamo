@@ -111,6 +111,7 @@ static const float indicator_data[] = {
 };
 
 GtkWidget *g_exposureSpin[1] = {0};
+GtkWidget *g_actuatorSpin = NULL;
 bool g_display_camimage = true; 
 bool g_display_centroids = true; 
 
@@ -632,6 +633,11 @@ static void updateExposureCB(GtkWidget *spinner, gpointer p){
 	}
 }
 
+static void updateActuatorCB(GtkWidget *spinner, gpointer p){
+	int v = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(g_actuatorSpin));
+	g_actuator = v; 
+}
+
 void recalibrate_clicked(GtkWidget *widget, gpointer gdata){
 	g_nFrames = 0; 
 	g_calibrated = false; 
@@ -897,7 +903,8 @@ GtkWidget *create_gl_window(){
 	snprintf(lbl, 128, "Exposure %d", i); 
 	g_exposureSpin[i] = mk_spinner(lbl, bx2, 50, 50 , 1000, 10	, 
 											updateExposureCB, GINT_TO_POINTER(0)); 
-	
+	g_actuatorSpin = mk_spinner("DM actuator", bx2, 0, 0, 96, 1, 
+										 updateActuatorCB, GINT_TO_POINTER(0)); 
 	
 	g_logarea = gtk_text_view_new();
 	GtkWidget* scrolledwindow = gtk_scrolled_window_new(NULL, NULL);

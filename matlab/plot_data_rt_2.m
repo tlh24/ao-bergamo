@@ -1,27 +1,28 @@
 %%--- 
 
-load('calibration_flat.mat'); 
+load('../calibration_flat.mat');
+load('../mask.mat'); % valid lenslets in the actual microscope
 
 nlenslets = size(calib, 1); 
+mask = mask(1:nlenslets); 
 % select 'valid' centroids based on calibration data. 
-cx = mean(calib(:, 1)); 
-cy = mean(calib(:, 2)); 
-pupil = sqrt((calib(:,1) - cx).^2 + (calib(:,2) - cy).^2) < 950; 
-calibx = calib(pupil, 1); 
-caliby = calib(pupil, 2); 
+cx = mean(calib(mask, 1)); 
+cy = mean(calib(mask, 2)); 
+calibx = calib(mask, 1); 
+caliby = calib(mask, 2); 
 
 calibx_n = calibx - cx; 
 caliby_n = caliby - cy; 
-calibx_n = (calibx_n / 950.0); 
-caliby_n = (caliby_n / 950.0); 
-nlenslets_n = sum(pupil); 
+calibx_n = (calibx_n / 925.0); 
+caliby_n = (caliby_n / 925.0); 
+nlenslets_n = sum(mask); 
 [Z,dZx,dZy] = zernikes_and_derivatives_cartesian_OSA (calibx_n, caliby_n, 6, "NaN");
 
-mmf = memmapfile('shared.dat','Format','single','Offset',0,'Repeat',6000);
+mmf = memmapfile('../shared.dat','Format','single','Offset',0,'Repeat',6000);
 
 fig1 = figure;
 
-for x = 1:5000
+for x = 1:500
     dat = mmf.Data; 
     dx = dat(1:2:end); 
     dy = dat(2:2:end); 
@@ -29,8 +30,8 @@ for x = 1:5000
     dx = dx(1:nlenslets) - calib(:,1); 
     dy = dy(1:nlenslets) - calib(:,2); 
     
-    dx = dx(pupil); 
-    dy = dy(pupil); 
+    dx = dx(mask); 
+    dy = dy(mask); 
 
     % use these derivatives to calculate Zernike coefficients. 
 
