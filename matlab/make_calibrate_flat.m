@@ -1,4 +1,4 @@
-load centroids_flat_50hz.mat
+load('../centroids.mat')
 x = double(x); 
 y = double(y); 
 xm = mean(x, 2); 
@@ -26,4 +26,4 @@ imagesc(dist > 1);
 figure
 scatter(xm, ym); 
 calib = [xm, ym]; 
-save('calibration_flat.mat', 'calib'); 
+save('../calibration_flat.mat', 'calib'); 

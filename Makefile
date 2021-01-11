@@ -31,3 +31,5 @@ deps:
 	sudo apt-get install libpng-dev libgtk-3-dev libmatio-dev \
 	libglew-dev libfreetype-dev libgsl-dev freeglut3-dev \
 	libglm-dev 
+	fallocate -l 1M shared_centroids.dat
+	fallocate -l 1k shared_dmctrl.dat

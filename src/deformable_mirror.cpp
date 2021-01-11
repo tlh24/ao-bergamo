@@ -45,12 +45,13 @@ void* dmControl_thread(void* writeData)
 
 	while(!g_die){
 		dm_semaphore->wait(); 
-		//cout << "Sending data to mirrors" << endl;
-		for(int i=0; i<nbAct; i++)
+		for(int i=0; i<nbAct; i++){
 			data[i] = fdata[i]; 
-		// Send value to the DM
+			//clamp values to keep from damaging the mirror.
+			if(data[i] > 0.15) data[i] = 0.15; 
+			if(data[i] < -0.15) data[i] = -0.15; 
+		}
 		dm.Send( data );
-		//cout << "Done." << endl;
 	}
 	// Release memory
 	delete [] data;

@@ -1,7 +1,6 @@
 %%--- 
-
 load('../calibration_flat.mat');
-load('../mask.mat'); % valid lenslets in the actual microscope
+load('../calibration_forward.mat'); % valid lenslets in the actual microscope
 
 nlenslets = size(calib, 1); 
 mask = mask(1:nlenslets); 
@@ -18,11 +17,25 @@ caliby_n = (caliby_n / 925.0);
 nlenslets_n = sum(mask); 
 [Z,dZx,dZy] = zernikes_and_derivatives_cartesian_OSA (calibx_n, caliby_n, 6, "NaN");
 
-mmf = memmapfile('../shared.dat','Format','single','Offset',0,'Repeat',6000);
+mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
+
+dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
+
+% doctor the forward control matrix to remove centroids where the mean
+% weight is more than a standard deviation off. 
+Cmask = [goodmask; goodmask; 1]; 
+Cmask = repmat(Cmask, 1, 97); 
+Cforward = C .* Cmask; 
+% also clamp the values... 
+Cforward = min(Cforward, 0.03); 
+Cforward = max(Cforward, -0.03); 
+
+DMcommand = zeros(97, 1); 
+[dmx, dmy] = dm_actuator_to_xy();
 
 fig1 = figure;
 
-for x = 1:500
+for x = 1:300
     dat = mmf.Data; 
     dx = dat(1:2:end); 
     dy = dat(2:2:end); 
@@ -42,7 +55,7 @@ for x = 1:500
     len = 1; 
     while(indx < 28)
         fin = indx + len; 
-        disp(['working on ' num2str(indx) ' to ' num2str(fin)]); 
+        % disp(['working on ' num2str(indx) ' to ' num2str(fin)]); 
         A = []; 
         for i = indx : fin
             A = [A [dZx(:,1,i); dZy(:,1,i)]];
@@ -72,14 +85,37 @@ for x = 1:500
     % looks alright, I guess. 
     % try reconstructing based on the Zernike polynomials. 
     Z = squeeze(Z); 
-    D = Z * coef; 
+	 coef2 = coef; 
+	 coef2(2:3) = 0; 
+    D = Z * coef2; 
     figure(fig1); 
-    subplot(1,2,1); 
+    subplot(1,3,1); 
     scatter3(calibx_n, caliby_n, D/max(D)); 
     title('Reconstruction')
-    subplot(1,2,2); 
+    subplot(1,3,2); 
     bar(coef); 
     title('Zernike coefficients'); 
+    
+    % now, based on dx and dy, calculate updated control signals .. 
+    A = [dx - mean(dx); dy - mean(dy); 1]; %remove tip/tilt
+    cmd = A' * Cforward ; 
+	 cmd = cmd' * -0.025; 
+ 	 DMcommand = 0.95*DMcommand + cmd; 
+	 DMcommand = min(DMcommand, 0.15); % clip, per reality.
+	 DMcommand = max(DMcommand, -0.15); 
+	 DMcommand = DMcommand - mean(DMcommand); %piston
+	 tilt = dmx \ DMcommand;
+	 % there still could be tip-tilt in the command, 
+	 % even if it was removed from the WFS derivatives.
+	 DMcommand = DMcommand - dmx * tilt; 
+	 tip = dmy \ DMcommand;
+	 DMcommand = DMcommand - dmy * tip; 
+	 % cmd = randn(97,1) * 0.08; 
+	 subplot(1,3,3); 
+    bar(DMcommand); 
+    title('DM control signals'); 
+	 dmctrl.Data = single(DMcommand); 
+    
     pause(0.01); 
 end
 % now, need to convert this to physical units -- microns or waves, 

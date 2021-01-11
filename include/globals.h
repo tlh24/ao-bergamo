@@ -71,12 +71,16 @@ public:
         return false;
     }
 };
-extern Semaphore* dm_semaphore; 
-
-void* dmControl_thread(void* writeData); 
 
 #define MAX_LENSLETS 3000
 #define NTHREADS 8
+
+extern Semaphore* dm_semaphore; 
+extern Semaphore g_calc_centroid_semaphore[NTHREADS]; 
+extern Semaphore g_done_centroid_semaphore[NTHREADS]; 
+
+void* dmControl_thread(void* writeData); 
+
 extern float g_centroids[MAX_LENSLETS][2];
 extern float g_centroidsCalib[MAX_LENSLETS][2];
 extern int g_lensletStarts[MAX_LENSLETS][2];
@@ -88,6 +92,7 @@ extern bool g_calibrated;
 extern bool g_reset_data; //clear memory
 extern bool g_write_data; //write to disc
 extern bool g_record_data; 
+extern bool g_test_dm; 
 extern int g_nFrames;
 extern Gtk_UpdateLabel g_centroidCalc_label;
 extern Gtk_UpdateLabel g_framerate_label;

@@ -14,6 +14,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <random>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_fit.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -45,6 +47,8 @@ int g_lensSpanW = 35;
 int g_lensSpanH = 35;
 int g_nFrames = 0;
 bool g_calibrated = false; 
+Semaphore g_calc_centroid_semaphore[NTHREADS]; 
+Semaphore g_done_centroid_semaphore[NTHREADS]; 
 
 float g_pixthresh = 70.0/255.0; 
 float g_sumthresh = 3.0; 
@@ -55,6 +59,7 @@ bool g_set_exposure = true;
 bool g_reset_data = false;
 bool g_record_data = false; 
 bool g_write_data = false; 
+int g_write_last_size = 0; 
 
 int g_dm_actuator = 0; 
 int g_dm_counter = 0;
@@ -86,14 +91,16 @@ void init_centroids(const unsigned char* image,
 			cy /= cd; 
 			g_lensletStarts[n][0] = cx - dx/2; 
 			g_lensletStarts[n][1] = cy - dy/2; 
-			printf("centroid %d found at %f %f val %f\n", n, cx, cy, cd); 
+			//printf("centroid %d found at %f %f val %f\n", n, cx, cy, cd); 
+			g_centroids[n][0] = cx; 
+			g_centroids[n][1] = cy; 
 			n++; 
 			sx = round(cx); 
 			sy = round(cy); 
 		} else {
 			cx /= cd; 
 			cy /= cd; 
-			printf("rejected centroid at %f %f val %f expected %d %d \n", cx, cy, cd, sx, sy); 
+			//printf("rejected centroid at %f %f val %f expected %d %d \n", cx, cy, cd, sx, sy); 
 		}
 		sx += dx * xdir; 
 		if(sx >= g_w-dx/2 || sx < dx/2){
@@ -102,16 +109,18 @@ void init_centroids(const unsigned char* image,
 			sy += dy; 
 		}
 	}
-	printf("found %d lenslets.\n", n); 
+	printf("init_centroids: found %d lenslets.\n", n); 
 	g_nCentroids = n; 
 	g_lensSpanW = dx; 
 	g_lensSpanH = dy; 
+	g_calibrated = true; 
 }
 void init_centroids_default(const unsigned char* image){
 	init_centroids(image, 319, 122);
 }
 
 struct calc_centroids_data {
+	int	threadNo; 
 	int	startLens; 
 	int	endLens; 
 	const unsigned char* image; 
@@ -120,34 +129,42 @@ struct calc_centroids_data {
 
 void* calc_centroids(void* v){
 	calc_centroids_data * p = (calc_centroids_data*) v; 
-	// will perhaps eventually do this on the gpu
-	// 'out' needs to be pre-allocated.
-	for(int i=p->startLens; i<p->endLens && i<g_nCentroids; i++){
-		float cx, cy, cd; 
-		cx = cy = cd = 0.0;
-		for(int row = 0; row < g_lensSpanH; row++){
-			int rr = row + g_lensletStarts[i][1]; 
-			for(int col = 0; col < g_lensSpanW; col++){
-				int cc = col + g_lensletStarts[i][0]; 
-				float d = (float)(p->image[rr * g_w + cc]) / 255.f; 
-				if(d > g_pixthresh - 0.22f){ // about 0.15 for 15x sigmoid
-					//hard thresholding leads to hard transitions
-					//add a secondary sigmoidal weighting around the threshold. 
-					float w = (tanhf(( d - g_pixthresh ) * 15.f) + 1.f)/2.f; 
-					d *= w; 
-					// further weight the COM by pixel intensities. 
-					cx += (float)cc * d; 
-					cy += (float)rr * d; 
-					cd += d; 
+	while(!g_die){
+		g_calc_centroid_semaphore[p->threadNo].wait(); 
+		// 'out' needs to be pre-allocated.
+// 		if(p->threadNo == 0)
+// 			printf("%d %d %d\n", p->startLens, p->endLens, g_nCentroids); 
+		for(int i=p->startLens; i<p->endLens && i<g_nCentroids && !g_die && p->image; i++){
+			float cx, cy, cd; 
+			cx = cy = cd = 0.0;
+			for(int row = 0; row < g_lensSpanH; row++){
+				int rr = row + g_lensletStarts[i][1]; 
+				for(int col = 0; col < g_lensSpanW; col++){
+					int cc = col + g_lensletStarts[i][0]; 
+					float d = (float)(p->image[rr * g_w + cc]) / 255.f; 
+					if(d > g_pixthresh - 0.22f){ // about 0.15 for 15x sigmoid
+						//hard thresholding leads to hard transitions
+						//add a secondary sigmoidal weighting around the threshold. 
+						float w = (tanhf(( d - g_pixthresh ) * 15.f) + 1.f)/2.f; 
+						d *= w; 
+						// further weight the COM by pixel intensities. 
+						cx += (float)cc * d; 
+						cy += (float)rr * d; 
+						cd += d; 
+					}
 				}
 			}
+			if(cd > g_sumthresh){
+				cx /= cd; 
+				cy /= cd; 
+				p->out[i*2 + 0] = cx; 
+				p->out[i*2 + 1] = cy; 
+			} else {
+				p->out[i*2 + 0] = 0.f; 
+				p->out[i*2 + 1] = 0.f;
+			}
 		}
-		if(cd > g_sumthresh){
-			cx /= cd; 
-			cy /= cd; 
-			p->out[i*2 + 0] = cx; 
-			p->out[i*2 + 1] = cy; 
-		}
+		g_done_centroid_semaphore[p->threadNo].notify(); 
 	}
 	return NULL; 
 }
@@ -315,8 +332,10 @@ bool read_calibration_flat(){
 			int n = matvar->dims[0]; 
 			g_nCentroids = n;
 			if(matvar->data_type == MAT_T_DOUBLE){
-				for(int i=0; i<MAX_LENSLETS*2; i++)
-					g_centroidsCalib[0][i] = -1.0; 
+				for(int i=0; i<MAX_LENSLETS; i++){
+					g_centroidsCalib[i][0] = -1.0;
+					g_centroidsCalib[i][1] = -1.0;
+				}
 				double* dat = (double*)(matvar->data);
 				for(int j=0; j<2; j++){
 					for(int i=0; i<n; i++){
@@ -351,7 +370,36 @@ bool read_calibration_flat(){
 		}
 	}
 	return calibrated;
-} 	
+}
+
+float* open_mmap_file(const char* fname, size_t size){
+	//share data with matlab through a mem-mapped file.
+	int mmfd = open(fname, O_RDWR, S_IREAD | S_IWRITE);
+	if (mmfd < 0) {
+		perror("Could not open file for memory mapping");
+		exit(1);
+	}
+	float* mmap_ptr = (float*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, mmfd, 0);
+	if (mmap_ptr == MAP_FAILED) {
+		perror("Could not memory map file");
+		exit(1);
+	}
+	close(mmfd); 
+	return mmap_ptr; 
+}
+
+void dm_actuator_to_xy(int act, double* x, double* y){
+	int starts[] = {0,5,12,21,32,43,54,65,76,85,92,  97};
+	int startsY[] = {-2,-3,-4,-5,-5,-5,-5,-5,-4,-3,-2}; 
+	int startsX[] = {5,4,3,2,1,0,-1,-2,-3,-4,-5}; 
+	if(act < 0 || act > 96) return; 
+	int i = 0; 
+	while(i<11 && starts[i+1] <= act){
+		i++; 
+	}
+	*x = (double)( startsX[i] ); 
+	*y = (double)( startsY[i] + act - starts[i] ); 
+}
 
 void* video_thread(void*){
 	int exitCode = 0;
@@ -369,20 +417,12 @@ void* video_thread(void*){
 	VectorSerialize<float>* dmVec; 
 	dmVec = new VectorSerialize<float>(97, MAT_C_SINGLE); 
 	
-	//share data with matlab through a mem-mapped file.
-
-	int mmfd = open("shared.dat", O_RDWR, S_IREAD | S_IWRITE);
-	if (mmfd < 0) {
-		perror("Could not open file for memory mapping");
-		exit(1);
+	float* mmap_centroids = open_mmap_file("shared_centroids.dat", MAX_LENSLETS*2*4); 
+	float* mmap_dmctrl = open_mmap_file("shared_dmctrl.dat", 97 * 4); 
+	for(int i=0; i<97; i++){
+		mmap_dmctrl[i] = 0.f;
+		//matlab must overwrite...
 	}
-	float* mmap_ptr = (float*)mmap(NULL, MAX_LENSLETS*2*4, PROT_READ | PROT_WRITE, MAP_SHARED, mmfd, 0);
-	
-	if (mmap_ptr == MAP_FAILED) {
-		perror("Could not memory map file");
-		exit(1);
-	}
-	close(mmfd); 
 	
 	//distribute centroid calculation over multiple threads
 	pthread_t thread[NTHREADS];
@@ -391,11 +431,15 @@ void* video_thread(void*){
 	calc_centroids_data centroids_thread_data[NTHREADS]; 
 	int sl = 0; 
 	for(int i=0; i<NTHREADS; i++){
+		centroids_thread_data[i].threadNo = i; 
 		centroids_thread_data[i].startLens = sl; 
 		sl += g_nCentroids / NTHREADS; 
 		if(i==NTHREADS-1) sl = g_nCentroids; 
 		centroids_thread_data[i].endLens = sl; 
 		centroids_thread_data[i].out = &(g_centroids[0][0]); 
+		centroids_thread_data[i].image = NULL; 
+		
+		pthread_create( &(thread[i]), &attr, calc_centroids, (void*)(&(centroids_thread_data[i]))); 
 	}
 	
 	//start up the deformable mirror thread. 
@@ -409,7 +453,7 @@ void* video_thread(void*){
 	
 	//init gaussian random number generator, too
 	std::default_random_engine generator;
-	std::normal_distribution<float> distribution(0.0,0.018);
+	std::normal_distribution<float> distribution(0.0,0.025);
 	
 	try{
 		CInstantCamera camera( CTlFactory::GetInstance().CreateFirstDevice());
@@ -451,24 +495,35 @@ void* video_thread(void*){
 				memcpy(g_data[0], pImageBuffer, g_w*g_h); 
 				g_copy[0] = 1; 
 			}
-			if(!g_calibrated){
+			if(!g_calibrated && g_nFrames > 10){
 				//write out a png of the image!
 				writeGrayPNG("framecap.png", 
 									ptrGrabResult->GetWidth(), 
 									ptrGrabResult->GetHeight(), 
 									pImageBuffer); 
 				init_centroids_default(pImageBuffer); 
-				centroidVec->clear(); 
-				g_calibrated = true; 
+				centroidVec->clear(); 				
+				// need to reinit the shared centroid data. 
+				int sl = 0; 
+				for(int i=0; i<NTHREADS; i++){
+					centroids_thread_data[i].threadNo = i; 
+					centroids_thread_data[i].startLens = sl; 
+					sl += g_nCentroids / NTHREADS; 
+					if(i==NTHREADS-1) sl = g_nCentroids; 
+					centroids_thread_data[i].endLens = sl; 
+					centroids_thread_data[i].out = &(g_centroids[0][0]); 
+				}
 			} else {
 				double start = gettime(); 
 				for(int i=0; i<NTHREADS; i++){
 					centroids_thread_data[i].image = pImageBuffer; 
-					pthread_create( &thread[i], &attr, calc_centroids, (void*)(&(centroids_thread_data[i]))); 
 				}
-				void* ptr; 
 				for(int i=0; i<NTHREADS; i++){
-					pthread_join(thread[i], &ptr); 
+					g_calc_centroid_semaphore[i].notify(); 
+					// semaphores are more efficient than starting new threads each frame.
+				}
+				for(int i=0; i<NTHREADS; i++){
+					g_done_centroid_semaphore[i].wait(); 
 				}
 				g_centroidCalc_label.set(gettime() - start); 
 				g_framerate_label.set(1.0 / (start - lastFrameTime));
@@ -489,13 +544,42 @@ void* video_thread(void*){
 					for(int i=0; i<97; i++){
 						dm_data[i] = 0.f;
 					}
-					if(0){
+					if(g_test_dm){
 						//generate a new dm command signal. 
 						for(int i=0; i<97; i++){
 							dm_data[i] = distribution(generator);
-							if(dm_data[i] > 0.10) dm_data[i] = 0.10; 
-							if(dm_data[i] <-0.10) dm_data[i] =-0.10; 
+							if(dm_data[i] > 0.15) dm_data[i] = 0.15; 
+							if(dm_data[i] <-0.15) dm_data[i] =-0.15; 
 						}
+						//need to remove piston, tip, and tilt.  
+						float piston = 0.f; 
+						for(int i=0; i<97; i++){
+							piston += dm_data[i]; 
+						}
+						piston /= 97.f; 
+						for(int i=0; i<97; i++){
+							dm_data[i] -= piston; 
+						}
+						double x[97]; //gsl routines are double prec
+						double y[97]; 
+						double dm[97]; 
+						for(int i=0; i<97; i++){
+							dm_actuator_to_xy(i, &(x[i]), &(y[i]));
+							dm[i] = dm_data[i]; 
+						}
+						// use X and Y to predict dm via linear regression
+						double cx, cov11, sumsq; 
+						gsl_fit_mul(x, 1, dm, 1, 97, &cx, &cov11, &sumsq); 
+						for(int i=0; i<97; i++){
+							dm[i] = dm[i] - x[i]*cx; 
+						}
+						double cy; 
+						gsl_fit_mul(y, 1, dm, 1, 97, &cy, &cov11, &sumsq); 
+						for(int i=0; i<97; i++){
+							dm_data[i] = dm[i] - y[i]*cy; 
+						}
+					}else{
+						memcpy(dm_data, mmap_dmctrl, 97*4); 
 					}
 					if(0){
 						//need to encode actuator positions into RWC
@@ -513,6 +597,9 @@ void* video_thread(void*){
 						dm_data[27] = dm_data[26] = dm_data[25] = scl * 0.05; 
 					}
 					if(0){
+						for(int i=0; i<97; i++){
+							dm_data[i] = 0.f;
+						}
 						if(g_actuator > 96) g_actuator = 96; 
 						if(g_actuator < 0) g_actuator = 0; 
 						if(g_dm_counter & 0x1){
@@ -524,7 +611,7 @@ void* video_thread(void*){
 					}
 					dm_semaphore->notify(); 
 				}
-				memcpy(mmap_ptr, g_centroids, MAX_LENSLETS*2*4); 
+				memcpy(mmap_centroids, g_centroids, MAX_LENSLETS*2*4); 
 			}
 			
 			if(g_set_exposure){
@@ -543,13 +630,14 @@ void* video_thread(void*){
 				g_reset_data = false; 
 			}
 			
-			if(g_write_data){
+			if(g_write_data || centroidVec->nstored() - g_write_last_size > 60000){
 				vector<Serialize*> g_objs; 
 				g_objs.push_back(centroidVec); 
 				g_objs.push_back(dmVec); 
 				string fname = "centroids.mat";
 				writeMatlab(g_objs, (char *)fname.c_str(), false);
 				g_write_data = false;
+				g_write_last_size = centroidVec->nstored();
 			}
 			g_nFrames++; 
 		}
@@ -559,40 +647,14 @@ void* video_thread(void*){
 		cerr << "An exception occurred." << endl
 		<< e.GetDescription() << endl;
 		exitCode = 1;
-		
-		//read in a png and process it. 
-		unsigned char* image = read_png_file("framecap.png"); 
-		writeGrayPNG("framecap_test.png", g_w, g_h, image); 
-		if(image){
-			memcpy(g_data[0], image, g_w*g_h); 
-			g_copy[0] = 1; 
-		}
-		long double start = gettime(); 
-		init_centroids_default(image); 
-		std::cout << "centroid init time: " << gettime() - start << endl; 
-		
-		start = gettime(); 
-		
-		for(int i=0; i<NTHREADS; i++){
-			centroids_thread_data[i].image = image; 
-			pthread_create( &thread[i], &attr, calc_centroids, (void*)(&(centroids_thread_data[i]))); 
-		}
-		void* ptr; 
-		for(int i=0; i<NTHREADS; i++){
-			pthread_join(thread[i], &ptr); 
-		}
-		std::cout << "centroid calc time: " << gettime() - start << endl; 
-		//3.5ms with -O3 -- we don't need to move this to the GPU.
-		for(int i=0; i<g_nCentroids && i<3000; i++){
-			centroidVec->m_stor[i] = g_centroids[i][0]; 
-			centroidVec->m_stor2[i] = g_centroids[i][1]; 
-		}
-		centroidVec->store(); 
-		free(image); 
 	}
 	printf("done.\n"); 
-	// Releases all pylon resources. 
-	PylonTerminate(); 
+	
+	PylonTerminate(); // Releases all pylon resources. 
+	
+	for(int i=0; i<NTHREADS; i++){
+		g_calc_centroid_semaphore[i].notify(); 
+	}
 	
 	free(g_data[0]); 
 	g_data[0] = NULL; 
@@ -601,9 +663,11 @@ void* video_thread(void*){
 	void* ptr; 
 	pthread_join(dm_thread, &ptr); 
 	
-	if (munmap(mmap_ptr, MAX_LENSLETS*8) < 0) {
-		perror("Could not unmap file");
-		exit(1);
+	if (munmap(mmap_centroids, MAX_LENSLETS*8) < 0) {
+		perror("Could not unmap centroids");
+	}
+	if (munmap(mmap_dmctrl, 97*4) < 0) {
+		perror("Could not unmap dmctrl");
 	}
 	long exC = (long)exitCode; 
 	return (void*)exC;

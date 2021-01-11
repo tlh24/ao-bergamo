@@ -114,6 +114,7 @@ GtkWidget *g_exposureSpin[1] = {0};
 GtkWidget *g_actuatorSpin = NULL;
 bool g_display_camimage = true; 
 bool g_display_centroids = true; 
+bool g_test_dm = false; 
 
 int init_resources() {
 	/* Initialize the FreeType2 library */
@@ -519,8 +520,13 @@ render(GtkGLArea *area, GdkGLContext *context){
 	glBindVertexArray(0); // vao
 	glUseProgram(0);
 	glFlush ();
-//   printf("render time %f copy time %f frame rate %f\n", t2 - t, t3 - t, 1.0 / (t - last_render_time)); 
-  last_render_time = t; 
+	last_render_time = t; 
+	
+	//GUI redraws.. 
+	g_centroidCalc_label.redraw(); 
+	g_framerate_label.redraw(); 
+	g_dataSize_label.redraw(); 
+	g_frame++; 
 	return TRUE;
 }
 
@@ -564,8 +570,6 @@ on_realize (GtkGLArea *area){
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glDisable(GL_CULL_FACE); 
 	glEnable(GL_POINT_SPRITE);
-
-	//glPixelStorei (GL_UNPACK_ALIGNMENT, 1); 
   
 	for(int i=0; i<1; i++){
 		glGenTextures(1, &(gl_tex[i]));					// Create 1 Texture
@@ -586,16 +590,28 @@ on_realize (GtkGLArea *area){
 	init_shaders ();
 	init_resources();
 	glErr(111);
+	
+	//from the gtk3_glarea example: use a frame clock instead of timer callback. 
+	// Get frame clock:
+	GdkGLContext *glcontext = gtk_gl_area_get_context(area);
+	GdkWindow *glwindow = gdk_gl_context_get_window(glcontext);
+	GdkFrameClock *frame_clock = gdk_window_get_frame_clock(glwindow);
+
+	// Connect update signal:
+	g_signal_connect_swapped
+		( frame_clock
+		, "update"
+		, G_CALLBACK(gtk_gl_area_queue_render) //XXX
+		, area
+		) ;
+	// Start updating:
+	gdk_frame_clock_begin_updating(frame_clock);
 }
 
 static gboolean redraw(gpointer user_data){
 	if(glarea){
 		gtk_widget_queue_draw(glarea);
 	}
-	g_centroidCalc_label.redraw(); 
-	g_framerate_label.redraw(); 
-	g_dataSize_label.redraw(); 
-	g_frame++; 
 	return TRUE;
 }
 
@@ -664,6 +680,11 @@ void display_centroids_clicked(GtkWidget *widget, gpointer gdata){
 
 void display_camimage_clicked(GtkWidget *widget, gpointer gdata){
 	g_display_camimage = gtk_toggle_button_get_active(
+		GTK_TOGGLE_BUTTON(widget));
+}
+
+void test_dm_clicked(GtkWidget *widget, gpointer gdata){
+	g_test_dm = gtk_toggle_button_get_active(
 		GTK_TOGGLE_BUTTON(widget));
 }
 
@@ -807,8 +828,6 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 GtkWidget *create_gl_window(){
 	GtkWidget	*glwindow;
 
-	/* ... Create the window which will hold glarea ... */
-	/* ... Create a window in gtk - note the window is NOT visible yet ... */
 	glwindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size (GTK_WINDOW (glwindow), 2500, 2100);
 
@@ -819,35 +838,35 @@ GtkWidget *create_gl_window(){
 							G_CALLBACK(destroyGUI), NULL);
 
 	glarea = gtk_gl_area_new(); 
+	if(!glarea) { 
+		g_print("Can't create GtkGlArea widget\n");
+		return FALSE;
+	}
 	
 	gtk_gl_area_set_has_alpha((GtkGLArea*)glarea, TRUE); 
 	gtk_gl_area_set_has_depth_buffer((GtkGLArea*)glarea, TRUE); 
 	gtk_gl_area_set_auto_render((GtkGLArea*)glarea, TRUE); 
 	g_signal_connect(glarea, "render", G_CALLBACK(render), NULL); 
 	g_signal_connect(glarea, "realize", G_CALLBACK(on_realize), NULL); 
-	if(!glarea) { 
-		g_print("Can't create GtkGlArea widget\n");
-		return FALSE;
-	}
+	g_signal_connect (glarea, "configure_event",
+	                      G_CALLBACK(on_configure), NULL);
 	
 	GtkWidget *paned = gtk_paned_new (GTK_ORIENTATION_HORIZONTAL);
 	gtk_container_add (GTK_CONTAINER (glwindow), paned);
 	gtk_paned_add1(GTK_PANED (paned), glarea);
 
 	/* ... Set up events and signals for OpenGL widget ... */
-	gtk_widget_set_events(GTK_WIDGET(glarea),
-								 gtk_widget_get_events (glarea) | 
-								GDK_EXPOSURE_MASK|
-								GDK_STRUCTURE_MASK | //resize? 
-								GDK_BUTTON_PRESS_MASK|
-								GDK_BUTTON_RELEASE_MASK|
-								GDK_KEY_PRESS_MASK|
-								GDK_KEY_RELEASE_MASK|
-								GDK_POINTER_MOTION_MASK|
-								GDK_POINTER_MOTION_HINT_MASK |
-								GDK_SCROLL_MASK);
-	g_signal_connect (glarea, "configure_event",
-	                      G_CALLBACK(on_configure), NULL);
+// 	gtk_widget_set_events(GTK_WIDGET(glarea),
+// 								 gtk_widget_get_events (glarea) | 
+// 								GDK_EXPOSURE_MASK|
+// 								GDK_STRUCTURE_MASK | //resize? 
+// 								GDK_BUTTON_PRESS_MASK|
+// 								GDK_BUTTON_RELEASE_MASK|
+// 								GDK_KEY_PRESS_MASK|
+// 								GDK_KEY_RELEASE_MASK|
+// 								GDK_POINTER_MOTION_MASK|
+// 								GDK_POINTER_MOTION_HINT_MASK |
+// 								GDK_SCROLL_MASK);
 // 	g_signal_connect (glarea, "motion_notify_event",
 // 								G_CALLBACK(glarea_motion_notify), NULL);
 // 	g_signal_connect (glarea, "button_press_event",
@@ -898,10 +917,17 @@ GtkWidget *create_gl_window(){
 							G_CALLBACK(display_camimage_clicked), NULL);
 	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
 	
+	button = gtk_check_button_new_with_label("test deformable mirror"); 
+	gtk_toggle_button_set_active(
+		GTK_TOGGLE_BUTTON(button), g_test_dm); 
+	g_signal_connect(button,"clicked", 
+							G_CALLBACK(test_dm_clicked), NULL);
+	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
+	
 	int i=0; 
 	char lbl[128]; 
 	snprintf(lbl, 128, "Exposure %d", i); 
-	g_exposureSpin[i] = mk_spinner(lbl, bx2, 50, 50 , 1000, 10	, 
+	g_exposureSpin[i] = mk_spinner(lbl, bx2, 50, 50 , 4000, 10	, 
 											updateExposureCB, GINT_TO_POINTER(0)); 
 	g_actuatorSpin = mk_spinner("DM actuator", bx2, 0, 0, 96, 1, 
 										 updateActuatorCB, GINT_TO_POINTER(0)); 
@@ -934,12 +960,11 @@ int main(int argc, char **argv){
 	for(int i=0; i<1; i++){
 		g_s[i] = g_w * g_h; 
 		g_data[i] = (unsigned char*)malloc(g_s[i]); 
-		for(unsigned int j=0; j<g_s[i]/4; j++)
+		for(unsigned int j=0; j<g_s[i]; j++)
 				g_data[i][j] = (unsigned char)(rand() & 0xff); 
 		g_copy[i] = 1; 
 	}
 
-	
 	/* ... Initialize gtk, handle command-line parameters ... */
 	gtk_init(&argc, &argv);
 
@@ -955,7 +980,7 @@ int main(int argc, char **argv){
 	i=0; pthread_create( &thread1, &attr, video_thread, (void*)i );
 	
 	// add a timeout to render frames, 60fps.  
-	g_timeout_add (1000 / 25, redraw, 0);
+	// g_timeout_add (1000 / 25, redraw, 0);
 	
 	/* ... This is the event loop in gtk ... */
 	/* ... Do not return until _gtk_main_quit_ is called ... */
