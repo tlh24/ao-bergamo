@@ -66,6 +66,13 @@ int g_dm_counter = 0;
 
 void init_centroids(const unsigned char* image, 
 						  int sx, int sy){
+	//zero everything first -- so nothing spurious is drawn.
+	for(int k=0; k < MAX_LENSLETS; k++){
+		g_lensletStarts[k][0] = 0.f; 
+		g_lensletStarts[k][1] = 0.f;  
+		g_centroids[k][0] = 0.f; 
+		g_centroids[k][1] = 0.f; 
+	}
 	//fill out the centroid structure in raster-scanning order starting from sx,sy
 	int dx = g_lensSpanW; 
 	int dy = g_lensSpanH; 
@@ -544,7 +551,7 @@ void* video_thread(void*){
 					for(int i=0; i<97; i++){
 						dm_data[i] = 0.f;
 					}
-					if(g_test_dm){
+					if(g_test_dm.get()){
 						//generate a new dm command signal. 
 						for(int i=0; i<97; i++){
 							dm_data[i] = distribution(generator);

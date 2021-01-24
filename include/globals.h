@@ -41,6 +41,40 @@ public:
 		gtk_widget_queue_draw(m_widget); 
 	}
 };
+// in gl-main.cpp
+void Gtk_CheckboxLabel_clicked(GtkWidget *widget, gpointer gdata); 
+
+class Gtk_CheckboxLabel{
+private:
+	bool	m_val; 
+	GtkWidget* m_widget; 
+public:
+	Gtk_CheckboxLabel(bool b){
+		m_widget = NULL; 
+		m_val = b; 
+	}
+	~Gtk_CheckboxLabel(){
+		if(m_widget) delete m_widget; 
+	}
+	void set(bool b){
+		if(b != m_val){
+			m_val = b; 
+			if(m_widget)
+				gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(m_widget), b); 
+		}
+	}
+	bool get(){ return m_val; }
+	void clicked() { 
+		m_val = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_widget));
+	}
+	void make(const char* lbl, GtkWidget* box){
+		m_widget = gtk_check_button_new_with_label(lbl); 
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(m_widget), m_val); 
+		g_signal_connect(m_widget,"clicked", 
+								G_CALLBACK(Gtk_CheckboxLabel_clicked), this);
+		gtk_box_pack_start (GTK_BOX (box), m_widget, FALSE, FALSE, 2);
+	}
+};
 
 class Semaphore{
 private:
@@ -92,7 +126,7 @@ extern bool g_calibrated;
 extern bool g_reset_data; //clear memory
 extern bool g_write_data; //write to disc
 extern bool g_record_data; 
-extern bool g_test_dm; 
+extern Gtk_CheckboxLabel g_test_dm; 
 extern int g_nFrames;
 extern Gtk_UpdateLabel g_centroidCalc_label;
 extern Gtk_UpdateLabel g_framerate_label;

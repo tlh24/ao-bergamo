@@ -65,7 +65,7 @@ GLint uniform_color;
 float mvp[16];
 
 // GL objects 
-guint g_vbo[6] = {0,0,0,0,0,0};
+guint g_vbo[7] = {0,0,0,0,0,0};
 guint g_vao = 0; 
 guint g_program[3] = {0,0,0};
 guint g_mvp_location[3] = {0,0,0};
@@ -112,14 +112,15 @@ static const float indicator_data[] = {
 
 GtkWidget *g_exposureSpin[1] = {0};
 GtkWidget *g_actuatorSpin = NULL;
-bool g_display_camimage = true; 
-bool g_display_centroids = true; 
-bool g_test_dm = false; 
+Gtk_CheckboxLabel g_display_camimage(true); 
+Gtk_CheckboxLabel g_display_centroids(true); 
+Gtk_CheckboxLabel g_display_calib_centroids(true); 
+Gtk_CheckboxLabel g_test_dm(false); 
 
 int init_resources() {
 	/* Initialize the FreeType2 library */
 	printf("init text stuff \n");
-	init_text_helper(g_vao, g_vbo[4]);
+	init_text_helper(g_vao, g_vbo[6]);
 	return 1;
 }
 
@@ -205,11 +206,31 @@ static guint create_shader (int          shader_type,
 	return shader != 0;
 }
 
-void setCentroidData(){
-	glBindBuffer(GL_ARRAY_BUFFER, g_vbo[3]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_centroids), g_centroids, GL_DYNAMIC_DRAW); 
+void setCentroidData(int vboi, float* ptr){
+	// vboi is 3 or 4
+	// ptr is g_centroids or g_calibCentroids
+	glBindBuffer(GL_ARRAY_BUFFER, g_vbo[vboi]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_centroids), ptr, GL_DYNAMIC_DRAW); 
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0); //XY 
 	//this call is critical!!
+}
+void renderCentroids(int vboi, float* md){
+	//render point sprites for the centroids. 
+	float* ptr = (float*)g_centroids; 
+	if(vboi == 4) ptr = (float*)g_centroidsCalib; 
+	setCentroidData(vboi, ptr); 
+	glUseProgram (g_program[1]);
+	glUniformMatrix4fv (g_mvp_location[1], 1, GL_FALSE, md);
+	glBindBuffer(GL_ARRAY_BUFFER, g_vbo[vboi]);
+	glVertexAttribPointer(g_position_location[1], 2, GL_FLOAT, GL_FALSE, 0, (void*)0); //XY 
+	glEnableVertexAttribArray(g_position_location[1]); //attribute '0' must match the layout in the shader. 
+	float color[] = {1.0, 0.0, 0.0, 0.18}; 
+	if(vboi == 4){
+		color[0] = 0.f; color[1] = 0.7f; color[2] = 0.7f;   
+	}
+	glUniform4fv(g_color_location, 1, color); 
+	glPointSize(8.0);              //specify size of points in pixels
+	glDrawArrays(GL_POINTS, 0, MAX_LENSLETS);  //draw the points
 }
 
 static gboolean init_shaders () {
@@ -297,7 +318,7 @@ static gboolean init_shaders () {
 	glBindVertexArray(g_vao);
 	
 	//init the vertex buffer objects. 
-	glGenBuffers(6, &(g_vbo[0])); 
+	glGenBuffers(7, &(g_vbo[0])); 
 	glBindBuffer(GL_ARRAY_BUFFER, g_vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
 	
@@ -335,7 +356,7 @@ static gboolean init_shaders () {
 		circle_data[i*6+5] = 0.0; 
 		t += dt; 
 	}
-	glBindBuffer(GL_ARRAY_BUFFER, g_vbo[5]); //text is #4.
+	glBindBuffer(GL_ARRAY_BUFFER, g_vbo[5]); //text is #6.
 	glBufferData(GL_ARRAY_BUFFER, sizeof(circle_data), circle_data, GL_STATIC_DRAW);
 
 	glBindVertexArray(0); //release vao
@@ -434,7 +455,7 @@ render(GtkGLArea *area, GdkGLContext *context){
 	glErr(130);
 	//copy over the texture data. 
 	for(int i=0; i<1; i++){
-		if(g_display_camimage && g_copy[i] && g_data[i]){
+		if(g_display_camimage.get() && g_copy[i] && g_data[i]){
 			glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, gl_pbo[i][gl_pbo_indx[i]]);
 			GLubyte* ptr = (GLubyte*)glMapBufferRange(GL_PIXEL_UNPACK_BUFFER_ARB, 0, g_w*g_h, GL_MAP_WRITE_BIT|GL_MAP_INVALIDATE_BUFFER_BIT);
 			if(ptr){
@@ -467,7 +488,7 @@ render(GtkGLArea *area, GdkGLContext *context){
 // 	mat_mul(mvp, z, g_mvp); //inverse used for mouse-clicks
 	memcpy(g_mvp, mvp, 16*sizeof(float)); 
 	
-	if(g_program[0] && g_vbo[0] && g_program[1] && g_vbo[3]){
+	if(g_program[0] && g_vbo[0] && g_program[1] && g_vbo[3] && g_vbo[4]){
 		glUseProgram (g_program[0]);
 		glBindVertexArray(g_vao);
 		
@@ -491,7 +512,7 @@ render(GtkGLArea *area, GdkGLContext *context){
 		flip[0] = 1.0; 
 		flip[1] = 1.0; //flip y. 
 		
-		if(g_display_camimage){
+		if(g_display_camimage.get()){
 			glUniform4fv(g_flip_location, 1, flip); 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, gl_tex[i]);
@@ -499,18 +520,11 @@ render(GtkGLArea *area, GdkGLContext *context){
 			glDrawArrays (GL_TRIANGLES, 0, 6);
 		}
 
-		if(g_display_centroids){
-			//render point sprites for the centroids. 
-			setCentroidData(); 
-			glUseProgram (g_program[1]);
-			glUniformMatrix4fv (g_mvp_location[1], 1, GL_FALSE, md);
-			glBindBuffer(GL_ARRAY_BUFFER, g_vbo[3]);
-			glVertexAttribPointer(g_position_location[1], 2, GL_FLOAT, GL_FALSE, 0, (void*)0); //XY 
-			glEnableVertexAttribArray(g_position_location[1]); //attribute '0' must match the layout in the shader. 
-			float color[] = {1.0, 0.0, 0.0, 0.25}; 
-			glUniform4fv(g_color_location, 1, color); 
-			glPointSize(8.0);              //specify size of points in pixels
-			glDrawArrays(GL_POINTS, 0, MAX_LENSLETS);  //draw the points
+		if(g_display_centroids.get()){
+			renderCentroids(3, md);
+		}
+		if(g_display_calib_centroids.get()){
+			renderCentroids(4, md);
 		}
 	}
 	glErr(602);
@@ -626,7 +640,7 @@ gl_fini(){
 
 	/* destroy all the resources we created */
 	if (g_vbo[0] != 0)
-		glDeleteBuffers (1, g_vbo);
+		glDeleteBuffers (7, g_vbo);
 	for(int i=0; i<3; i++){
 			if (g_program[i] != 0)
 				glDeleteProgram (g_program[i]);
@@ -668,24 +682,9 @@ void write_data_clicked(GtkWidget *widget, gpointer gdata){
 	g_write_data = true; 
 }
 
-void record_data_clicked(GtkWidget *widget, gpointer gdata){
-	g_record_data = gtk_toggle_button_get_active(
-		GTK_TOGGLE_BUTTON(widget));
-}
-
-void display_centroids_clicked(GtkWidget *widget, gpointer gdata){
-	g_display_centroids = gtk_toggle_button_get_active(
-		GTK_TOGGLE_BUTTON(widget));
-}
-
-void display_camimage_clicked(GtkWidget *widget, gpointer gdata){
-	g_display_camimage = gtk_toggle_button_get_active(
-		GTK_TOGGLE_BUTTON(widget));
-}
-
-void test_dm_clicked(GtkWidget *widget, gpointer gdata){
-	g_test_dm = gtk_toggle_button_get_active(
-		GTK_TOGGLE_BUTTON(widget));
+void Gtk_CheckboxLabel_clicked(GtkWidget *widget, gpointer gdata){
+	Gtk_CheckboxLabel* chk = (Gtk_CheckboxLabel*)gdata; 
+	chk->clicked(); 
 }
 
 gint glarea_motion_notify(GtkWidget *widget, GdkEventMotion *event){
@@ -898,36 +897,15 @@ GtkWidget *create_gl_window(){
 							G_CALLBACK(write_data_clicked), NULL);
 	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
 	
-	button = gtk_check_button_new_with_label("record data"); 
-	g_signal_connect(button,"clicked", 
-							G_CALLBACK(record_data_clicked), NULL);
-	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
-	
-	button = gtk_check_button_new_with_label("display centroids"); 
-	gtk_toggle_button_set_active(
-		GTK_TOGGLE_BUTTON(button), g_display_centroids); 
-	g_signal_connect(button,"clicked", 
-							G_CALLBACK(display_centroids_clicked), NULL);
-	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
-	
-	button = gtk_check_button_new_with_label("display camera image"); 
-	gtk_toggle_button_set_active(
-		GTK_TOGGLE_BUTTON(button), g_display_camimage); 
-	g_signal_connect(button,"clicked", 
-							G_CALLBACK(display_camimage_clicked), NULL);
-	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
-	
-	button = gtk_check_button_new_with_label("test deformable mirror"); 
-	gtk_toggle_button_set_active(
-		GTK_TOGGLE_BUTTON(button), g_test_dm); 
-	g_signal_connect(button,"clicked", 
-							G_CALLBACK(test_dm_clicked), NULL);
-	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
+	g_display_camimage.make("record data", bx2); 
+	g_display_centroids.make("display centrods", bx2); 
+	g_display_calib_centroids.make("disp calibration", bx2); 
+	g_test_dm.make("test deformable mirror", bx2); 
 	
 	int i=0; 
 	char lbl[128]; 
 	snprintf(lbl, 128, "Exposure %d", i); 
-	g_exposureSpin[i] = mk_spinner(lbl, bx2, 50, 50 , 4000, 10	, 
+	g_exposureSpin[i] = mk_spinner(lbl, bx2, 50, 50 , 15000, 10	, 
 											updateExposureCB, GINT_TO_POINTER(0)); 
 	g_actuatorSpin = mk_spinner("DM actuator", bx2, 0, 0, 96, 1, 
 										 updateActuatorCB, GINT_TO_POINTER(0)); 
