@@ -112,6 +112,7 @@ static const float indicator_data[] = {
 
 GtkWidget *g_exposureSpin[1] = {0};
 GtkWidget *g_actuatorSpin = NULL;
+Gtk_CheckboxLabel g_record_data(false); 
 Gtk_CheckboxLabel g_display_camimage(true); 
 Gtk_CheckboxLabel g_display_centroids(true); 
 Gtk_CheckboxLabel g_display_calib_centroids(true); 
@@ -897,7 +898,8 @@ GtkWidget *create_gl_window(){
 							G_CALLBACK(write_data_clicked), NULL);
 	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
 	
-	g_display_camimage.make("record data", bx2); 
+	g_record_data.make("record data", bx2); 
+	g_display_camimage.make("display camera image", bx2); 
 	g_display_centroids.make("display centrods", bx2); 
 	g_display_calib_centroids.make("disp calibration", bx2); 
 	g_test_dm.make("test deformable mirror", bx2); 

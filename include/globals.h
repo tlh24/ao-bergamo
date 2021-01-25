@@ -125,8 +125,8 @@ extern bool g_set_exposure;
 extern bool g_calibrated; 
 extern bool g_reset_data; //clear memory
 extern bool g_write_data; //write to disc
-extern bool g_record_data; 
 extern Gtk_CheckboxLabel g_test_dm; 
+extern Gtk_CheckboxLabel g_record_data; 
 extern int g_nFrames;
 extern Gtk_UpdateLabel g_centroidCalc_label;
 extern Gtk_UpdateLabel g_framerate_label;

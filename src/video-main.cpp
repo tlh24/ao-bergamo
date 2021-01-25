@@ -57,7 +57,6 @@ int g_exposure = 50;
 int g_actuator = 0; 
 bool g_set_exposure = true; 
 bool g_reset_data = false;
-bool g_record_data = false; 
 bool g_write_data = false; 
 int g_write_last_size = 0; 
 
@@ -537,7 +536,7 @@ void* video_thread(void*){
 				g_dataSize_label.set((float)centroidVec->nstored()); 
 				lastFrameTime = start; 
 				if(g_nFrames%5 == 4){
-					if(g_record_data && centroidVec->nstored() < 180000){ 
+					if(g_record_data.get() && centroidVec->nstored() < 180000){ 
 						for(int i=0; i<g_nCentroids && i<3000; i++){
 							centroidVec->m_stor[i] = g_centroids[i][0]; 
 							centroidVec->m_stor2[i] = g_centroids[i][1]; 
