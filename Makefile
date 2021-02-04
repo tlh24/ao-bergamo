@@ -29,7 +29,7 @@ clean:
 
 deps: 
 	sudo apt-get install libpng-dev libgtk-3-dev libmatio-dev \
-	libglew-dev libfreetype-dev libgsl-dev freeglut3-dev \
-	libglm-dev 
+	libglew-dev libfreetype6-dev libgsl-dev freeglut3-dev \
+	libglm-dev libgsl-dev
 	fallocate -l 1M shared_centroids.dat
 	fallocate -l 1k shared_dmctrl.dat
