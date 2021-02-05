@@ -21,21 +21,25 @@ mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat'
 
 dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
 
-% doctor the forward control matrix to remove centroids where the mean
-% weight is more than a standard deviation off. 
-Cmask = [goodmask; goodmask; 1]; 
-Cmask = repmat(Cmask, 1, 97); 
-Cforward = C .* Cmask; 
-% also clamp the values... 
-Cforward = min(Cforward, 0.03); 
-Cforward = max(Cforward, -0.03); 
+% % doctor the forward control matrix to remove centroids where the mean
+% % weight is more than a standard deviation off. 
+% Cmask = [goodmask; goodmask; 1]; 
+% Cmask = repmat(Cmask, 1, 97); 
+% Cforward = C .* Cmask; 
+% % also clamp the values... 
+% Cforward = min(Cforward, 0.03); 
+% Cforward = max(Cforward, -0.03); 
 
 DMcommand = zeros(97, 1); 
 [dmx, dmy] = dm_actuator_to_xy();
 
 fig1 = figure;
 
-for x = 1:300
+ButtonHandle = uicontrol('Style', 'PushButton', ...
+                         'String', 'Stop loop', ...
+                         'Callback', 'n=10e6');
+
+while n < 1e6
     dat = mmf.Data; 
     dx = dat(1:2:end); 
     dy = dat(2:2:end); 
@@ -115,8 +119,6 @@ for x = 1:300
     bar(DMcommand); 
     title('DM control signals'); 
 	 dmctrl.Data = single(DMcommand); 
-    
-    pause(0.01); 
+    drawnow; 
+	 n = n + 1; 
 end
-% now, need to convert this to physical units -- microns or waves, 
-% based on the curvature of the point source. 
