@@ -43,8 +43,8 @@ float g_centroids[MAX_LENSLETS][2];
 float g_centroidsCalib[MAX_LENSLETS][2];
 int g_lensletStarts[MAX_LENSLETS][2];
 int g_nCentroids = 0;
-int g_lensSpanW = 35; 
-int g_lensSpanH = 35;
+int g_lensSpanW = 54; 
+int g_lensSpanH = 54;
 int g_nFrames = 0;
 bool g_calibrated = false; 
 Semaphore g_calc_centroid_semaphore[NTHREADS]; 
@@ -122,7 +122,7 @@ void init_centroids(const unsigned char* image,
 	g_calibrated = true; 
 }
 void init_centroids_default(const unsigned char* image){
-	init_centroids(image, 319, 122);
+	init_centroids(image, 295, 149);
 }
 
 struct calc_centroids_data {
@@ -454,7 +454,9 @@ void* video_thread(void*){
 		dm_data[k] = 0.f; 
 	}
 	pthread_t dm_thread;
+#ifdef DEFORMABLE_MIRROR
 	pthread_create( &dm_thread, &attr, dmControl_thread, (void*)dm_data); 
+#endif
 	dm_semaphore = new Semaphore(); 
 	
 	//init gaussian random number generator, too

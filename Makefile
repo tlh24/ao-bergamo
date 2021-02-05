@@ -9,7 +9,9 @@ CPPFLAGS   += -O3
 LDFLAGS    := $(shell $(PYLON_ROOT)/bin/pylon-config --libs-rpath)
 LDLIBS     := $(shell $(PYLON_ROOT)/bin/pylon-config --libs) 
 LDLIBS     += $(shell pkg-config --libs $(GLIBS))
-LDLIBS     += -lasdk -lpng -lrt -lmatio -lpthread -lGL -lGLEW -lgsl -lgslcblas -lfreetype 
+LDLIBS     += -lpng -lrt -lmatio -lpthread -lGL -lGLEW -lgsl -lgslcblas -lfreetype 
+# LDLIBS     += -lasdk 
+# CPPFLAGS   += -DDEFORMABLE_MIRROR
 
 
 OBJS := src/video-main.o src/gl-main.o src/deformable_mirror.o src/gettime.o src/writematlab.o src/text_helper.o
@@ -29,7 +31,7 @@ clean:
 
 deps: 
 	sudo apt-get install libpng-dev libgtk-3-dev libmatio-dev \
-	libglew-dev libfreetype-dev libgsl-dev freeglut3-dev \
-	libglm-dev 
+	libglew-dev libfreetype6-dev libgsl-dev freeglut3-dev \
+	libglm-dev libgsl-dev
 	fallocate -l 1M shared_centroids.dat
 	fallocate -l 1k shared_dmctrl.dat

@@ -17,6 +17,7 @@ using namespace std;
 
 Semaphore* dm_semaphore; 
 
+#ifdef DEFORMABLE_MIRROR
 // Example using C++ API
 void* dmControl_thread(void* writeData)
 {
@@ -58,3 +59,4 @@ void* dmControl_thread(void* writeData)
 	DM::PrintLastError();
 	return NULL;
 }
+#endif
