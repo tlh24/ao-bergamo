@@ -1,4 +1,4 @@
-load ../centroids-jan25.mat
+load ../centroids.mat
 x = double(x); 
 y = double(y); 
 v = double(v); 
@@ -19,11 +19,11 @@ st = std(dx, [], 2) + std(dy, [], 2);
 
 % ignore all centroids that don't move
 % .. or move too much. 
-mask = (sx > median(sx)/4) .* (st < 4); 
-mask = mask>0;
-disp(['number of active centroids: ' num2str(sum(mask))]); 
-x = x(mask, :); 
-y = y(mask, :); 
+cmask = (sx > median(sx(sx > 0))/4) .* (st < 10); 
+cmask = cmask>0;
+disp(['number of active centroids: ' num2str(sum(cmask))]); 
+x = x(cmask, :); 
+y = y(cmask, :); 
 mx = mean(x, 2); 
 my = mean(y, 2); 
 dx = x - mx; 
@@ -99,14 +99,8 @@ Cmn = mean(Cp, 2);
 figure; 
 subplot(1,2,1)
 [q, indx] = sort(Cmn); 
-scatter(mx(indx), -my(indx), abs(q*1e11), colors, 'filled'); 
+scatter(mx(indx), -my(indx), ceil(abs(q*1e11)+0.001), colors, 'filled'); 
 title('mean weight of C (fwd trans mtx) * 1e11 per centroid'); 
-
-% cx = mean(mx); 
-% cy = mean(my); 
-% rad = sqrt( (mx - cx).^2 + (my - cy).^2 ); 
-% plot(sort(rad))
-% radius of 925 should do it. 
 
 % still confused.  
 % Try looking at the std of data on each centroid? 
@@ -116,4 +110,4 @@ Cstd = std(dx, [], 2) + std(dy, [], 2);
 scatter(mx(indx), -my(indx), abs(q * 500), colors, 'filled'); 
 title('std(dx) + std(dy) for all time per centroid'); 
 Cforward = C; 
-save('../calibration_forward.mat', 'Cforward', 'mask', 'mx', 'my');
+save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my');

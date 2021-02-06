@@ -5,7 +5,7 @@ global mask save_frames save_dmcommand save_wfs_dx save_wfs_dy save_sumstd
 global DMcommandHist DMcommandStd DMcommandK
 global temperature temperatures k
 
-N = 15e3; 
+N = 10e3; 
 save_frames = single(zeros(N, 256, 256)); % just to be double sure. 
 save_dmcommand = single(zeros(N, 97));
 save_sumstd = single(zeros(N, 10)); 
@@ -15,15 +15,16 @@ save_wfs_dy = single(zeros(N, sum(mask)));
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
 
 dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
-
-if 1
-	DMcommand = zeros(97, 1); 
-else
-	load('../Best_DMcommand4.mat'); 
-	Best_DMcommand = reshape(Best_DMcommand, 97, 1); % transpose
-	DMcommand = Best_DMcommand; 
+if 0 
+	if 1
+		DMcommand = zeros(97, 1); 
+	else
+		load('../Best_DMcommand4.mat'); 
+		Best_DMcommand = reshape(Best_DMcommand, 97, 1); % transpose
+		DMcommand = Best_DMcommand; 
+	end
+	DMcommandHist = repmat(DMcommand, 1, 100); 
 end
-DMcommandHist = repmat(DMcommand, 1, 100); 
 DMcommandStd = zeros(1, 100);
 DMcommandK = zeros(1, 100); 
 
@@ -38,7 +39,7 @@ fopen(sock); % waits for a connection
 
 
 temperature = 0.01; 
-starttemp = 0.0075; % naive start = 0.008
+starttemp = 0.00375; % naive start = 0.008
 endtemp = 0.000; 
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
@@ -54,7 +55,7 @@ while k < N
 	mother = DMcommandHist(:,pick2); 
 	recomb = (rand(1)-0.5) * 2*pi; 
 	kid = father .* (dmangle > recomb) + mother .* (dmangle <= recomb); 
-	noise = (randn(97,1)*temperature) .* (rand(97, 1) > 0.8); 
+	noise = (randn(97,1)*temperature) .* (rand(97, 1) > 0.83); 
 	send_cmd_get_data(kid+noise)
 	
 	% this doesn't work. 
@@ -135,11 +136,15 @@ function send_cmd_get_data(cmd)
 	save_dmcommand(k, :) = DMcommandP;
 	save_wfs_dx(k, :) = dx; 
 	save_wfs_dy(k, :) = dy; 
+	if k < 15
+		% ignore the startup transitent
+		sumstd = 0; 
+	end
 	
 	DMcommandHist = [DMcommandHist DMcommandP]; 
 	DMcommandStd = [DMcommandStd sumstd]; 
 	DMcommandK = [DMcommandK k]; 
-	agedecay = 1-((k - DMcommandK) / 5000); 
+	agedecay = 1-((k - DMcommandK) / 10000); 
 	[~, indx] = sort(DMcommandStd .* agedecay, 'descend'); 
 	DMcommandStd = DMcommandStd(indx(1:100)); 
 	DMcommandHist = DMcommandHist(:, indx(1:100)); 

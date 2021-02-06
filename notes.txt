@@ -17,3 +17,30 @@ to detect slight tip/tilt, on the order of many waves at the edges, you need to 
 To increase the sensitivity, we need to increase the focal length.
 (Which of course decreases the dynamic range..)
 The thorlabs WFS have a focal length of 4.1mm; we are using an array with a fl of 3.17mm.  So, they should be in the same ballpark..
+
+Feb 4 2021
+
+Slowly making progress on this -- looking back on my notes above! 
+Need to incoporate active DM control into the C++ program; 
+running the loop in matlab is slower. 
+In the C++ program we can adjust the DM signal shortly after getting the centroids. 
+Trick is to be careful about indexing. 
+Flow: 
+-- Get centroids. 
+-- Index them based on the control matrices
+-- Collate into a measurement vector + 1
+--- Subtract the mean here; no tip tilt correction.
+-- Get the desired zernike modes from matlab (Will need the dZx and dZy matrices)
+-- Expand to an identically-sized measurement vector
+-- Subtract, matrix multiply..
+-- Perform PID control, or just PI control, to update the DM actuators. 
+
+If we hold the zernike matrices and desired modes in the C++ program, 
+then we need to do some careful frame synchronization, and can do full modal AO correction without matlab.  (Of course matlab might well be in there for visualization, through memmaped files..)
+
+Variables we need sent to shwfs:
+-- mask
+-- control matrix Cforward
+-- Z, dZx, dZy (this depends on calbrated locations of the centroids .. note we are approximating the derivative as constant here, when it is not & should really be updated as the centroids move.. meh.. given our actual correction tends to be on the order of one pixel, i think this is an OK approximation)
+
+Also, at some point we should obtain a full dataset where the DM is stimulated not just with random noise, but also with Zernike modes.  This data can be used to fit a NN for translating WFS dx dy to actuator control signals, including nonlinearities.  

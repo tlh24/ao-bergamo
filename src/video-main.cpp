@@ -326,7 +326,7 @@ bool read_calibration_flat(){
 	matvar_t *matvar; 
 	bool calibrated = false;
 
-	matfp = Mat_Open("calibration_flat.mat",MAT_ACC_RDONLY); 
+	matfp = Mat_Open("data/calibration_flat.mat",MAT_ACC_RDONLY); 
 	if ( NULL == matfp ) { 
 		fprintf(stderr,"Error opening calibration_flat.mat"); 
 		return false; 
