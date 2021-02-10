@@ -16,8 +16,8 @@ plot(frames_sum);
 nlenslets = sum(mask); 
 [~, indx] = sort(frames_sum(9000:end), 'descend'); 
 indx = indx(1:100) + 9000 - 1; 
-avg_wfs_x = mean(save_wfs_dx(indx, :), 1)'; 
-avg_wfs_y = mean(save_wfs_dy(indx, :), 1)'; 
+avg_wfs_x = mean(double(save_wfs_dx(indx, :)), 1)'; 
+avg_wfs_y = mean(double(save_wfs_dy(indx, :)), 1)'; 
 avg_wfs_x = avg_wfs_x(cmask(1:nlenslets)); 
 avg_wfs_y = avg_wfs_y(cmask(1:nlenslets)); 
 
@@ -40,8 +40,8 @@ scatter(dmx, dmy, 250, colors(colorindx, :), 'filled')
 title('average DM control signals for top solutions'); 
 
 Best_DMcommand = avg_dmcommand; 
-save('../data/calibration_geneopt.mat', 'Best_DMcommand', ...
-	'avg_wfs_x', 'avg_wfs_y'); 
+genecalib = [avg_wfs_x avg_wfs_y];
+save('../data/calibration_geneopt.mat','Best_DMcommand','genecalib'); 
 % save the absolute centroid positions
 % convert to relative later, depends on forward-calibration.
 

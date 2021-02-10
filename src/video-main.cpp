@@ -47,6 +47,7 @@ int g_lensSpanW = 54;
 int g_lensSpanH = 54;
 int g_nFrames = 0;
 bool g_calibrated = false; 
+bool g_dmcontrolen = false; 
 Semaphore g_calc_centroid_semaphore[NTHREADS]; 
 Semaphore g_done_centroid_semaphore[NTHREADS]; 
 
@@ -320,7 +321,7 @@ unsigned char* read_png_file(const char *filename) {
 	return grayb; 
 }
 
-bool read_calibration_flat(){
+bool read_calibration_flat(){ 
 	// read in the calibration matlab file. 
 	mat_t    *matfp; 
 	matvar_t *matvar; 
@@ -407,12 +408,44 @@ void dm_actuator_to_xy(int act, double* x, double* y){
 	*y = (double)( startsY[i] + act - starts[i] ); 
 }
 
+void dm_remove_ptt(float* dm_data){
+	// remove piston, tilt, and tip from the DM control signal. 
+	//need to remove piston, tip, and tilt.  
+	float piston = 0.f; 
+	for(int i=0; i<97; i++){
+		piston += dm_data[i]; 
+	}
+	piston /= 97.f; 
+	for(int i=0; i<97; i++){
+		dm_data[i] -= piston; 
+	}
+	double x[97]; //gsl routines are double prec
+	double y[97]; 
+	double dm[97]; 
+	for(int i=0; i<97; i++){
+		dm_actuator_to_xy(i, &(x[i]), &(y[i]));
+		dm[i] = dm_data[i]; 
+	}
+	// use X and Y to predict dm via linear regression
+	double cx, cov11, sumsq; 
+	gsl_fit_mul(x, 1, dm, 1, 97, &cx, &cov11, &sumsq); 
+	for(int i=0; i<97; i++){
+		dm[i] = dm[i] - x[i]*cx; 
+	}
+	double cy; 
+	gsl_fit_mul(y, 1, dm, 1, 97, &cy, &cov11, &sumsq); 
+	for(int i=0; i<97; i++){
+		dm_data[i] = dm[i] - y[i]*cy; 
+	}
+}
+
 void* video_thread(void*){
 	int exitCode = 0;
 	g_startTime = gettime(); 
 	double lastFrameTime = g_startTime; 
 	
 	g_calibrated = read_calibration_flat(); 
+	g_dmcontrolen = dm_control_init(); 
 
 	PylonInitialize();
 	
@@ -428,6 +461,10 @@ void* video_thread(void*){
 	for(int i=0; i<97; i++){
 		mmap_dmctrl[i] = 0.f;
 		//matlab must overwrite...
+	}
+	float* mmap_zernike = open_mmap_file("shared_zernike.dat", 36 * 4); 
+	for(int i=0; i<36; i++){
+		mmap_zernike[i] = 0.f;
 	}
 	
 	//distribute centroid calculation over multiple threads
@@ -559,35 +596,15 @@ void* video_thread(void*){
 							if(dm_data[i] > 0.15) dm_data[i] = 0.15; 
 							if(dm_data[i] <-0.15) dm_data[i] =-0.15; 
 						}
-						//need to remove piston, tip, and tilt.  
-						float piston = 0.f; 
-						for(int i=0; i<97; i++){
-							piston += dm_data[i]; 
-						}
-						piston /= 97.f; 
-						for(int i=0; i<97; i++){
-							dm_data[i] -= piston; 
-						}
-						double x[97]; //gsl routines are double prec
-						double y[97]; 
-						double dm[97]; 
-						for(int i=0; i<97; i++){
-							dm_actuator_to_xy(i, &(x[i]), &(y[i]));
-							dm[i] = dm_data[i]; 
-						}
-						// use X and Y to predict dm via linear regression
-						double cx, cov11, sumsq; 
-						gsl_fit_mul(x, 1, dm, 1, 97, &cx, &cov11, &sumsq); 
-						for(int i=0; i<97; i++){
-							dm[i] = dm[i] - x[i]*cx; 
-						}
-						double cy; 
-						gsl_fit_mul(y, 1, dm, 1, 97, &cy, &cov11, &sumsq); 
-						for(int i=0; i<97; i++){
-							dm_data[i] = dm[i] - y[i]*cy; 
-						}
+						memcpy(mmap_dmctrl, dm_data, 97*4); 
 					}else{
-						memcpy(dm_data, mmap_dmctrl, 97*4); 
+						if(g_control_dm.get() && g_dmcontrolen){
+							dm_control_run(mmap_zernike, dm_data); 
+							//echo command to matlab for visualization.
+							memcpy(mmap_dmctrl, dm_data, 97*4); 
+						}else{
+							memcpy(dm_data, mmap_dmctrl, 97*4); 
+						}
 					}
 					if(0){
 						//need to encode actuator positions into RWC
@@ -617,6 +634,7 @@ void* video_thread(void*){
 						}
 						g_dm_counter++; 
 					}
+					dm_remove_ptt(dm_data); 
 					dm_semaphore->notify(); 
 				}
 				memcpy(mmap_centroids, g_centroids, MAX_LENSLETS*2*4); 
@@ -666,6 +684,8 @@ void* video_thread(void*){
 	
 	free(g_data[0]); 
 	g_data[0] = NULL; 
+	
+	dm_control_cleanup(); 
 	
 	dm_semaphore->notify(); 
 	void* ptr; 

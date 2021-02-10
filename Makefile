@@ -14,7 +14,7 @@ LDLIBS     += -lasdk
 CPPFLAGS   += -DDEFORMABLE_MIRROR
 
 
-OBJS := src/video-main.o src/gl-main.o src/deformable_mirror.o src/gettime.o src/writematlab.o src/text_helper.o
+OBJS := src/video-main.o src/gl-main.o src/deformable_mirror.o src/dm-control.o src/gettime.o src/writematlab.o src/text_helper.o
 
 # Rules for building
 all: shwfs
@@ -35,3 +35,4 @@ deps:
 	libglm-dev libgsl-dev
 	fallocate -l 1M shared_centroids.dat
 	fallocate -l 1k shared_dmctrl.dat
+	fallocate -l 1k shared_zernike.dat

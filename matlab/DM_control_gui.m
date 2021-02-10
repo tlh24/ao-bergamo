@@ -2,7 +2,6 @@
 load('../data/calibration_flat.mat');
 load('../data/calibration_forward.mat'); % valid lenslets in the actual microscope
 load('../data/calibration_geneopt.mat');
-calib = [avg_wfs_x avg_wfs_y]; % this is 'flat' based on image optimization..
 nlenslets = sum(mask);
 % this is confusing, i know. 
 % 'mask' from calibration_flat, converts from all possible 3k centroids to
@@ -42,16 +41,16 @@ while n < 1e6
     datx = dat(1:2:end); 
     daty = dat(2:2:end); 
     
-    dx = datx(cmask) - calib(:,1); 
-    dy = daty(cmask) - calib(:,2); 
+    dx = datx(cmask) - genecalib(:,1); 
+    dy = daty(cmask) - genecalib(:,2); 
     
 	 % fixed alignment, use the calibration file 
 	 % variables 'C' and 'mask'. 
 	if(n < 5)
-		cx = mean(calib(:, 1)); 
-		cy = mean(calib(:, 2)); 
-		calibx = calib(:, 1); 
-		caliby = calib(:, 2); 
+		cx = mean(genecalib(:, 1)); 
+		cy = mean(genecalib(:, 2)); 
+		calibx = genecalib(:, 1); 
+		caliby = genecalib(:, 2); 
 
 		calibx_n = calibx - cx; 
 		caliby_n = caliby - cy; 

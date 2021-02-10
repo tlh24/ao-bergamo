@@ -117,6 +117,7 @@ Gtk_CheckboxLabel g_display_camimage(true);
 Gtk_CheckboxLabel g_display_centroids(true); 
 Gtk_CheckboxLabel g_display_calib_centroids(true); 
 Gtk_CheckboxLabel g_test_dm(false); 
+Gtk_CheckboxLabel g_control_dm(false); 
 
 int init_resources() {
 	/* Initialize the FreeType2 library */
@@ -903,6 +904,7 @@ GtkWidget *create_gl_window(){
 	g_display_centroids.make("display centrods", bx2); 
 	g_display_calib_centroids.make("disp calibration", bx2); 
 	g_test_dm.make("test deformable mirror", bx2); 
+	g_control_dm.make("closed-loop control of DM", bx2);
 	
 	int i=0; 
 	char lbl[128]; 
