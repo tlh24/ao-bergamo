@@ -12,11 +12,14 @@ nlenslets = sum(mask);
 % as of Feb 4, sum(mask) is 1052; 
 % sum(cmask) is 539. 
 
-mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
+mmf = memmapfile('../shared_centroids.dat',...
+	'Format','single','Offset',0,'Repeat',6000);
 
-dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
+dmctrl = memmapfile('../shared_dmctrl.dat',...
+	'Format','single','Offset',0,'Repeat',97, 'Writable',true);
 
-zernikectrl = memmapfile('../shared_zernike.dat', 'Format','single','Offset',0,'Repeat',36,'Writable',true); 
+zernikectrl = memmapfile('../shared_zernike.dat', ...
+	'Format','single','Offset',0,'Repeat',36,'Writable',true); 
 
 DMcommand = single(dmctrl.Data); 
 [dmx, dmy] = dm_actuator_to_xy();

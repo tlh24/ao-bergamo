@@ -452,7 +452,7 @@ void* video_thread(void*){
 	const uint8_t *pImageBuffer;
 	
 	VectorSerialize2<float>* centroidVec; 
-	centroidVec = new VectorSerialize2<float>(3000, MAT_C_SINGLE); 
+	centroidVec = new VectorSerialize2<float>(1100, MAT_C_SINGLE); 
 	VectorSerialize<float>* dmVec; 
 	dmVec = new VectorSerialize<float>(97, MAT_C_SINGLE); 
 	
@@ -575,8 +575,8 @@ void* video_thread(void*){
 				g_dataSize_label.set((float)centroidVec->nstored()); 
 				lastFrameTime = start; 
 				if(g_nFrames%5 == 4){
-					if(g_record_data.get() && centroidVec->nstored() < 180000){ 
-						for(int i=0; i<g_nCentroids && i<3000; i++){
+					if(g_record_data.get() && centroidVec->nstored() < 250000){ 
+						for(int i=0; i<g_nCentroids && i<1100; i++){
 							centroidVec->m_stor[i] = g_centroids[i][0]; 
 							centroidVec->m_stor2[i] = g_centroids[i][1]; 
 						}
@@ -591,11 +591,7 @@ void* video_thread(void*){
 					}
 					if(g_test_dm.get()){
 						//generate a new dm command signal. 
-						for(int i=0; i<97; i++){
-							dm_data[i] = distribution(generator);
-							if(dm_data[i] > 0.15) dm_data[i] = 0.15; 
-							if(dm_data[i] <-0.15) dm_data[i] =-0.15; 
-						}
+						dm_rand_stim(dm_data); 
 						memcpy(mmap_dmctrl, dm_data, 97*4); 
 					}else{
 						if(g_control_dm.get() && g_dmcontrolen){
@@ -605,21 +601,6 @@ void* video_thread(void*){
 						}else{
 							memcpy(dm_data, mmap_dmctrl, 97*4); 
 						}
-					}
-					if(0){
-						//need to encode actuator positions into RWC
-						float scl = 1.f; 
-						if(g_dm_counter & 0x1){
-							scl *= -1.f; 
-						}
-						g_dm_counter++; 
-						dm_data[60] = dm_data[49] = dm_data[38] = scl * 0.08; 
-						dm_data[59] = dm_data[48] = dm_data[37] = scl * 0.08; 
-						dm_data[58] = dm_data[47] = dm_data[36] = scl * 0.08; 
-						dm_data[72] = dm_data[61] = dm_data[50] = dm_data[39] = dm_data[28] = scl * 0.05; 
-						dm_data[68] = dm_data[57] = dm_data[46] = dm_data[35] = dm_data[24] = scl * 0.05; 
-						dm_data[71] = dm_data[70] = dm_data[69] = scl * 0.05; 
-						dm_data[27] = dm_data[26] = dm_data[25] = scl * 0.05; 
 					}
 					if(0){
 						for(int i=0; i<97; i++){

@@ -15,7 +15,7 @@ save_wfs_dy = single(zeros(N, sum(mask)));
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
 
 dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
-if 0 
+if 1
 	if 1
 		DMcommand = zeros(97, 1); 
 	else
@@ -58,7 +58,7 @@ while k < N
 	noise = (randn(97,1)*temperature) .* (rand(97, 1) > 0.83); 
 	send_cmd_get_data(kid+noise)
 	
-	% this doesn't work. 
+	% this doesn't work. (!)
 	% there are no clean gradients (apparently) in the search space
 % 	if mod(k, 1000) == 0
 % 		% do a regression

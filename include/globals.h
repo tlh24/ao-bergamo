@@ -137,7 +137,8 @@ extern Gtk_UpdateLabel g_dataSize_label;
 void* video_thread(void*);
 
 bool dm_control_init(); 
-void dm_control_run(float* zernike, float* ctrl); 
+void dm_control_run(float* zernike, float* ctrl);
+void dm_rand_stim(float* ctrl); 
 void dm_control_cleanup(); 
 
 #endif

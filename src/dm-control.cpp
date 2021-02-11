@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <mutex>
 #include <condition_variable>
+#include <random>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include "globals.h"
@@ -24,6 +25,7 @@ gsl_matrix* g_Z = NULL;
 gsl_matrix* g_dZx = NULL; 
 gsl_matrix* g_dZy = NULL; 
 gsl_matrix* g_dmcommand = NULL; 
+gsl_matrix* g_dmZ = NULL; // Zernike matrix for converting gaussian random numbers to a DM command. see zernike_for_actuators.m
 
 bool read_matfile_variable(
 	mat_t* matfp, 
@@ -134,6 +136,15 @@ bool dm_control_init(){
 		gsl_matrix_set(g_dmcommand, i, 0, 0.0); 
 	}
 	
+	matfp = Mat_Open("data/dm_zernike_ctrl.mat",MAT_ACC_RDONLY); 
+	if ( NULL == matfp ) { 
+		fprintf(stderr,"Error opening dm_zernike_ctrl.mat"); 
+		return false; 
+	}
+	res = read_matfile_variable(matfp, "data/dm_zernike_ctrl.mat", "Z", 97, g_nZernike, &g_dmZ); 
+	if(!res){ Mat_Close(matfp); return res; }
+	Mat_Close(matfp);
+	
 	printf("All DM control variables loaded properly.\n"); 
 	return true; 
 }
@@ -180,7 +191,7 @@ void dm_control_run(float* zernike, float* command)
 	}
 	gsl_matrix_set(A, g_activeCentroids*2, 0, 1.0); 
 	
-	gsl_blas_dgemm(CBT, CBNT, -0.4, g_cforward, A, 0.995, g_dmcommand);
+	gsl_blas_dgemm(CBT, CBNT, -0.5, g_cforward, A, 0.995, g_dmcommand);
 	
 	for(int i=0; i<97; i++){
 		double x = gsl_matrix_get(g_dmcommand, i, 0); 
@@ -193,6 +204,33 @@ void dm_control_run(float* zernike, float* command)
 	gsl_matrix_free(desdy); 
 }
 
+//init gaussian random number generator
+std::default_random_engine generator;
+std::normal_distribution<double> distribution(0.0,1.0);
+void dm_rand_stim(float* command)
+{
+	//command = Z * randn(36, 1) + randn(97, 1) .* 0.022; 
+	for(int i=0; i<97; i++){
+		double r = distribution(generator); 
+		gsl_matrix_set(g_dmcommand, i, 0, r); 
+	}
+	gsl_matrix* rz = gsl_matrix_alloc(g_nZernike, 1); 
+	for(int i=0; i<g_nZernike; i++){
+		double r = distribution(generator); 
+		gsl_matrix_set(rz, i, 0, r); 
+	}
+	gsl_blas_dgemm(CBNT, CBNT, 1.0, g_dmZ, rz, 0.022, g_dmcommand); 
+	
+	for(int i=0; i<97; i++){
+		double x = gsl_matrix_get(g_dmcommand, i, 0); 
+		if(x > 0.15) x = 0.15; 
+		if(x<-0.15) x = -0.15; 
+		command[i] = x; 
+		//piston, tip and tilt will be removed on the other thread. 
+	}
+	gsl_matrix_free(rz); 
+}
+
 void dm_control_cleanup()
 {
 	if(g_cforward) gsl_matrix_free(g_cforward); 
@@ -203,4 +241,5 @@ void dm_control_cleanup()
 	if(g_dZx) gsl_matrix_free(g_dZx);
 	if(g_dZy) gsl_matrix_free(g_dZy);
 	if(g_dmcommand) gsl_matrix_free(g_dmcommand);
+	if(g_dmZ) gsl_matrix_free(g_dmZ);
 }

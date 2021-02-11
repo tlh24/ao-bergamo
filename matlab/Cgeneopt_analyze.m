@@ -1,6 +1,6 @@
 load('../data/calibration_forward.mat'); 
 load('../data/calibration_flat.mat'); 
-load('../data/DMoptimization_run5.mat'); 
+load('../rundata/DMoptimization_run5.mat'); 
 
 % this takes the output of a genetic optimization run, 
 % runs some diagnostics, 

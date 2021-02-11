@@ -6,10 +6,10 @@ dx = diff(x, 1, 2);
 dy = diff(y, 1, 2); 
 
 sx = sum(abs(dx) + abs(dy), 2);
-% figure; 
-% plot(sx); 
-% title('summed dx/dt and dy/dt'); 
-% xlabel('centroid no'); 
+figure; 
+plot(sx); 
+title('summed dx/dt and dy/dt'); 
+xlabel('centroid no'); 
 
 mx = mean(x, 2); 
 my = mean(y, 2); 
@@ -19,7 +19,7 @@ st = std(dx, [], 2) + std(dy, [], 2);
 
 % ignore all centroids that don't move
 % .. or move too much. 
-cmask = (sx > median(sx(sx > 0))/4) .* (st < 10); 
+cmask = (sx > median(sx(sx > 0))/8) .* (st < 10); 
 cmask = cmask>0;
 disp(['number of active centroids: ' num2str(sum(cmask))]); 
 x = x(cmask, :); 
@@ -110,4 +110,7 @@ Cstd = std(dx, [], 2) + std(dy, [], 2);
 scatter(mx(indx), -my(indx), abs(q * 500), colors, 'filled'); 
 title('std(dx) + std(dy) for all time per centroid'); 
 Cforward = C; 
+cmask2 = zeros(3000, 1); 
+cmask2(1:1100) = cmask; 
+cmask = cmask2>0; 
 save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my');
