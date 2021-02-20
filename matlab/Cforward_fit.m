@@ -1,4 +1,4 @@
-load ../centroids.mat
+load ../rundata/centroids.mat
 x = double(x); 
 y = double(y); 
 v = double(v); 
@@ -34,7 +34,12 @@ nt = size(x, 2);
 A = [dx; dy; ones(1,nt)]; 
 % ignore bad frames too
 amx = max(abs(A(1:end-1, :)), [], 1); 
-tmask = amx < 10; 
+if 0 
+	tmask = (amx < 20) .* (rand(1,nt) > 0.5); 
+	tmask = tmask > 0; 
+else 
+	tmask = (amx < 20); 
+end
 A = A(:, tmask); 
 v = v(:, tmask); 
 amx = amx(tmask); 
@@ -75,6 +80,14 @@ title('DM pred')
 colorbar;
 
 figure; 
+plot(std(err, 1), 'r','Linewidth', 2)
+hold on
+plot(std(pred, [], 1), 'b','Linewidth', 4)
+plot(std(v', [], 1), 'g','Linewidth', 2); 
+title('red = std. of pred error, blue = std. of prediction, black=data'); 
+xlabel('DM actuator number'); 
+
+figure; 
 imagesc(atan(zscore(C, 0, 'all'))); 
 title('weight matrix, zscored & atan transformed');
 
@@ -113,4 +126,7 @@ Cforward = C;
 cmask2 = zeros(3000, 1); 
 cmask2(1:1100) = cmask; 
 cmask = cmask2>0; 
-save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my');
+answer = input('Data looks good?  Save it? (1 / 0): '); 
+if answer == 1
+	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my');
+end

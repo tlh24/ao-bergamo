@@ -1,16 +1,12 @@
 close all
+load('../data/calibration_forward.mat', 'cmask'); 
 
-global DMcommand dmx dmy dmctrl mmf sock dmangle; 
-global mask save_frames save_dmcommand save_wfs_dx save_wfs_dy save_sumstd
-global DMcommandHist DMcommandStd DMcommandK
-global temperature temperatures k
-
-N = 10e3; 
+N = 15e3; 
 save_frames = single(zeros(N, 256, 256)); % just to be double sure. 
 save_dmcommand = single(zeros(N, 97));
 save_sumstd = single(zeros(N, 10)); 
-save_wfs_dx = single(zeros(N, sum(mask)));  
-save_wfs_dy = single(zeros(N, sum(mask))); 
+save_wfs_dx = single(zeros(N, sum(cmask)));  
+save_wfs_dy = single(zeros(N, sum(cmask))); 
 
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
 
@@ -39,8 +35,8 @@ fopen(sock); % waits for a connection
 
 
 temperature = 0.01; 
-starttemp = 0.00375; % naive start = 0.008
-endtemp = 0.000; 
+starttemp = 0.005; % naive start = 0.008
+endtemp = 0.001; 
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
 
@@ -56,42 +52,8 @@ while k < N
 	recomb = (rand(1)-0.5) * 2*pi; 
 	kid = father .* (dmangle > recomb) + mother .* (dmangle <= recomb); 
 	noise = (randn(97,1)*temperature) .* (rand(97, 1) > 0.83); 
-	send_cmd_get_data(kid+noise)
 	
-	% this doesn't work. (!)
-	% there are no clean gradients (apparently) in the search space
-% 	if mod(k, 1000) == 0
-% 		% do a regression
-% 		A = save_dmcommand(k-999:k, :); 
-% 		A_mean = mean(A, 1); 
-% 		A = A - A_mean; 
-% 		B = sum(save_sumstd(k-999:k, 2:end), 2); % FIXME!!
-% 		B = zscore(B); 
-% 		coef = A\B; 
-% 		pred = A*coef; 
-% 		cc = corrcoef(B, pred)
-% 		if cc(1, 2) > 0.2 % noise level is 0.31 about
-% 			disp('doing beam search'); 
-% 			scoef = coef * std(std(A, [], 2));
-% 			% beam search along this direction.
-% 			for j = 1:20
-% 				cmd = A_mean' + scoef*(j-1)/4; 
-% 				send_cmd_get_data(cmd); 
-% 			end
-% 		end
-% 	end
-	k = k + 1; 
-end
-
-fclose(sock); 
-
-function send_cmd_get_data(cmd)
-	global DMcommand dmx dmy DMcommandP dmctrl mmf sock; 
-	global mask save_frames save_dmcommand save_wfs_dx save_wfs_dy save_sumstd
-	global DMcommandHist DMcommandStd DMcommandK
-	global temperature k
-
-	DMcommand = reshape(cmd, 97, 1); 
+	DMcommand = reshape(kid+noise, 97, 1); 
 	DMcommand = min(DMcommand, 0.15); % clip, per reality.
 	DMcommand = max(DMcommand, -0.15); 
 	DMcommandP = DMcommand - mean(DMcommand); %piston
@@ -121,15 +83,13 @@ function send_cmd_get_data(cmd)
 		end
 		framen = framen+1; 
 	end
-% 	imagesc(sumframe); 
-% 	drawnow; 
 	
 	% read in the wavefront sensor
 	dat = mmf.Data; 
    datx = dat(1:2:end); 
    daty = dat(2:2:end); 
-	dx = datx(mask); 
-	dy = daty(mask); 
+	dx = datx(cmask); 
+	dy = daty(cmask); 
 	
 	% save some data... 
 	save_frames(k, :, :) = single(sumframe); % just to be double sure. 
@@ -144,10 +104,18 @@ function send_cmd_get_data(cmd)
 	DMcommandHist = [DMcommandHist DMcommandP]; 
 	DMcommandStd = [DMcommandStd sumstd]; 
 	DMcommandK = [DMcommandK k]; 
-	agedecay = 1-((k - DMcommandK) / 10000); 
+	agedecay = 1-((k - DMcommandK) / 15000); 
+	% this, roughly, should mirror the photobleaching rate
+	% for the given excitation wavelength.
+	% seems with 7% power at 950nm, it halves over 10k frames. 
+	% or goes from ~ 14 to 10 over 5k frames, slope of ~= 
 	[~, indx] = sort(DMcommandStd .* agedecay, 'descend'); 
 	DMcommandStd = DMcommandStd(indx(1:100)); 
 	DMcommandHist = DMcommandHist(:, indx(1:100)); 
 	DMcommandK = DMcommandK(:, indx(1:100)); 
 	disp([DMcommandStd(1) mean(DMcommandStd) temperature*1e7]); % display the best one. 
+	
+	k = k + 1; 
 end
+
+fclose(sock); 

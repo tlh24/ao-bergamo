@@ -65,9 +65,26 @@ bool read_matfile_variable(
 	return true; 
 }
 
-bool dm_control_init(){
+bool dm_control_init()
+{
+	// initialize these in the most fault-tolerant order.. 
+	if(g_dmcommand) gsl_matrix_free(g_dmcommand); 
+	g_dmcommand = gsl_matrix_alloc(97, 1); 
+	for(int i=0; i<97; i++){
+		gsl_matrix_set(g_dmcommand, i, 0, 0.0); 
+	}
+	g_nZernike = 36; //hardcoded, bad, iknow iknow.
+	mat_t *matfp = Mat_Open("data/dm_zernike_ctrl.mat",MAT_ACC_RDONLY); 
+	if ( NULL == matfp ) { 
+		fprintf(stderr,"Error opening dm_zernike_ctrl.mat"); 
+		return false; 
+	}
+	bool res = read_matfile_variable(matfp, "data/dm_zernike_ctrl.mat", "Z", 97, g_nZernike, &g_dmZ); 
+	if(!res){ Mat_Close(matfp); return res; }
+	Mat_Close(matfp);
+	
 	// note: g_nlenslets should be set after reading in calibration_flat.m. 
-	mat_t *matfp = Mat_Open("data/calibration_forward.mat", MAT_ACC_RDONLY); 
+	matfp = Mat_Open("data/calibration_forward.mat", MAT_ACC_RDONLY); 
 	if ( matfp == NULL ) { 
 		fprintf(stderr,"Error opening calibration_forward.mat"); 
 		return false; 
@@ -96,7 +113,7 @@ bool dm_control_init(){
 	} else {
 		printf("could not load variable cmask from calibration_forward.mat\n"); 
 	}
-	bool res = read_matfile_variable(matfp, "data/calibration_forward.mat", "Cforward", g_activeCentroids*2 + 1, 97, &g_cforward); 
+	res = read_matfile_variable(matfp, "data/calibration_forward.mat", "Cforward", g_activeCentroids*2 + 1, 97, &g_cforward); 
 	Mat_Close(matfp);
 	if(!res) return res; 
 	
@@ -117,7 +134,6 @@ bool dm_control_init(){
 		fprintf(stderr,"Error opening calibration_zernike.mat"); 
 		return false; 
 	}
-	g_nZernike = 36; //hardcoded, bad, iknow iknow.
 	res = read_matfile_variable(matfp, "data/calibration_zernike.mat", "Z", g_activeCentroids, g_nZernike, &g_Z); 
 	if(!res){ Mat_Close(matfp); return res; }
 	res = read_matfile_variable(matfp, "data/calibration_zernike.mat", "dZx", g_activeCentroids, g_nZernike, &g_dZx); 
@@ -130,20 +146,6 @@ bool dm_control_init(){
 	for(int i=0; i<g_nZernike; i++){
 		gsl_matrix_set(g_zcoef, i, 0, 0.0); 
 	}
-	if(g_dmcommand) gsl_matrix_free(g_dmcommand); 
-	g_dmcommand = gsl_matrix_alloc(97, 1); 
-	for(int i=0; i<97; i++){
-		gsl_matrix_set(g_dmcommand, i, 0, 0.0); 
-	}
-	
-	matfp = Mat_Open("data/dm_zernike_ctrl.mat",MAT_ACC_RDONLY); 
-	if ( NULL == matfp ) { 
-		fprintf(stderr,"Error opening dm_zernike_ctrl.mat"); 
-		return false; 
-	}
-	res = read_matfile_variable(matfp, "data/dm_zernike_ctrl.mat", "Z", 97, g_nZernike, &g_dmZ); 
-	if(!res){ Mat_Close(matfp); return res; }
-	Mat_Close(matfp);
 	
 	printf("All DM control variables loaded properly.\n"); 
 	return true; 
@@ -210,6 +212,10 @@ std::normal_distribution<double> distribution(0.0,1.0);
 void dm_rand_stim(float* command)
 {
 	//command = Z * randn(36, 1) + randn(97, 1) .* 0.022; 
+	if(g_dmcommand == NULL || g_dmZ == NULL){
+		printf("g_dmcommand variable not initialize.. bad file?\n"); 
+		return; 
+	}
 	for(int i=0; i<97; i++){
 		double r = distribution(generator); 
 		gsl_matrix_set(g_dmcommand, i, 0, r); 

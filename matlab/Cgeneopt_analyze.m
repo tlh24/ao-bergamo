@@ -1,6 +1,6 @@
 load('../data/calibration_forward.mat'); 
 load('../data/calibration_flat.mat'); 
-load('../rundata/DMoptimization_run5.mat'); 
+load('../rundata/DMoptimization_950nm.mat'); 
 
 % this takes the output of a genetic optimization run, 
 % runs some diagnostics, 
@@ -13,13 +13,11 @@ figure;
 frames_sum = sum(save_sumstd(:, 2:10), 2); 
 plot(frames_sum); 
 
-nlenslets = sum(mask); 
-[~, indx] = sort(frames_sum(9000:end), 'descend'); 
-indx = indx(1:100) + 9000 - 1; 
+nlenslets = sum(cmask); 
+[~, indx] = sort(frames_sum(14000:end), 'descend'); 
+indx = indx(1:100) + 14000 - 1; 
 avg_wfs_x = mean(double(save_wfs_dx(indx, :)), 1)'; 
 avg_wfs_y = mean(double(save_wfs_dy(indx, :)), 1)'; 
-avg_wfs_x = avg_wfs_x(cmask(1:nlenslets)); 
-avg_wfs_y = avg_wfs_y(cmask(1:nlenslets)); 
 
 figure;
 scatter3(mx, my, avg_wfs_x - mx); 
@@ -41,7 +39,7 @@ title('average DM control signals for top solutions');
 
 Best_DMcommand = avg_dmcommand; 
 genecalib = [avg_wfs_x avg_wfs_y];
-save('../data/calibration_geneopt.mat','Best_DMcommand','genecalib'); 
+save('../data/calibration_950geneopt.mat','Best_DMcommand','genecalib'); 
 % save the absolute centroid positions
 % convert to relative later, depends on forward-calibration.
 
@@ -62,3 +60,34 @@ end
 cmap = repmat(linspace(0,1,255)', 1, 3);
 mov = immovie(movie_frames,cmap);
 implay(mov);
+
+if 0 
+	sta = 500; 
+	fin = 15000; 
+	A = [(zscore(save_wfs_dx(sta:fin,:)) - mx') (zscore(save_wfs_dy(sta:fin,:)) - my') ones(fin-sta+1, 1)];
+	B = zscore(frames_sum(sta:fin));
+	coef = A\B; 
+	subplot(2, 1, 1)
+	plot(coef)
+	subplot(2,1,2)
+	hold off
+	pred = A*coef; 
+	plot(B, 'b')
+	hold on
+	plot(pred, 'r')
+
+	% that doesn't work .. rank deficient design matrix. 
+	A = [(zscore(save_wfs_dx(sta:fin,:)) - mx') (zscore(save_wfs_dy(sta:fin,:)) - my') ];
+	B = zscore(frames_sum(sta:fin));
+	coef = ridge(B, A, 5e-3); 
+	pred = A*coef; 
+	subplot(2, 1, 1)
+	plot(coef)
+	subplot(2,1,2)
+	hold off
+	pred = A*coef; 
+	plot(B, 'b')
+	hold on
+	plot(zscore(pred), 'r')
+	corrcoef(B, zscore(pred))
+end

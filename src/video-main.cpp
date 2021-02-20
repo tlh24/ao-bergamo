@@ -641,7 +641,7 @@ void* video_thread(void*){
 				vector<Serialize*> g_objs; 
 				g_objs.push_back(centroidVec); 
 				g_objs.push_back(dmVec); 
-				string fname = "centroids.mat";
+				string fname = "rundata/centroids.mat";
 				writeMatlab(g_objs, (char *)fname.c_str(), false);
 				g_write_data = false;
 				g_write_last_size = centroidVec->nstored();

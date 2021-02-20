@@ -90,7 +90,7 @@ for order = 3:8
 					datarx = udpr(); 
 				end
 				save_sumstd(j, framen+1) = datarx(1);
-				if framen > 2
+				if framen > 1
 					sumstd = sumstd + datarx(1); 
 				end
 				framen = framen+1; 
