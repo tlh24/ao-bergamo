@@ -126,7 +126,7 @@ Cforward = C;
 cmask2 = zeros(3000, 1); 
 cmask2(1:1100) = cmask; 
 cmask = cmask2>0; 
-answer = input('Data looks good?  Save it? (1 / 0): '); 
+answer = input('Save calibration_forward.mat? (1 / 0): '); 
 if answer == 1
 	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my');
 end

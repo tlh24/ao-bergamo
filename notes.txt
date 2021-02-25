@@ -53,3 +53,29 @@ X: 408um Y:719um
 X: 202um Y:362um (expected: 204 / 360)
 3x scan zoom:
 X: 137um Y:240um (expected: 135 / 240)
+
+** fixed in the machine configuration file ** 
+
+Feb 23 2021
+Trying out the Zernike modal optimization of image intensity
+Using slices from Chris, GFP labeled VTA neurons.  
+Looks somewhat ok, though I'm not sure about the improvement: 
+Went from 6.74 to 7.32 arbitrary units at 168um from the surface
+using 27% of 2065mW at 4x zoom.  (8.6% improvement)
+Switching between compensated and uncompensated, I cannot see much of a difference.  
+Same test on the surface: 
+Image intensity went from 7.03 to 7.79 at 4% f 2051mW, 4 zoom. (10% improvement)
+Primary change in observable when switching was lateral shift of a few um. 
+Same test 50um deep: 
+No change in flurescence intensity.  
+Slight correction of order 3 mode 0. (astigmatism)
+
+Feb 25 2021
+Changed the logic of zernopt t od two passes through each mode+der: forward and backward. 
+If both passes agree that a given coeficient setting is best, then the Zernike command is updated.  
+This seems to commonly update astigmatism and a few higher-order modes; 
+I suspect what it's doing is semi-optimizing the PSF not to be tight and small, but rather to include out-of-plane fluorescence. 
+Testing this code was done on Chris Magnus's GFP labeled VTA neurons
+He mad some 300um slices of a fixed brain for this purpose; it's working very well for testing. 
+Still, don't get a dramatic improvement in intensity. 
+Will need to test on a window?

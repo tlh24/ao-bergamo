@@ -24,7 +24,7 @@ zernikectrl = memmapfile('../shared_zernike.dat', ...
 DMcommand = single(dmctrl.Data); 
 [dmx, dmy] = dm_actuator_to_xy();
 Zcommand = zeros(36, 1); 
-zernikectrl.Data = single(Zcommand); 
+% zernikectrl.Data = single(Zcommand); 
 
 fig1 = figure;
 
@@ -103,21 +103,25 @@ while n < 1e6
 	 coef2(2:3) = 0; %remove tip/tilt, they are a function of alignment.
     D = Z * coef2; 
 	 
-	 Zcommand(4) = 0.15 * sin(n / 11); 
-	 Zcommand(5) = 0.15 * sin(n / 7); 
-	 Zcommand(6) = 0.15 * sin(n / 13);
-	 
-	 Zcommand(7) = 0.05 * sin(n / 17);
-	 Zcommand(8) = 0.05 * sin(n / 19);
-	 Zcommand(9) = 0.05 * sin(n / 23);
-	 Zcommand(10) = 0.05 * sin(n / 29);
-	 
-	 Zcommand(11) = 0.02 * sin(n / 31);
-	 Zcommand(12) = 0.02 * sin(n / 37);
-	 Zcommand(13) = 0.02 * sin(n / 41);
-	 Zcommand(14) = 0.02 * sin(n / 43);
-	 Zcommand(15) = 0.02 * sin(n / 47);
-	 zernikectrl.Data = single(Zcommand); 
+% 	 Zcommand = zeros(36, 1); 
+% 	 % Zcommand(5) = 0.15 * sin(n / 7); 
+% 	 if 0
+% 		 Zcommand(4) = 0.15 * sin(n / 11); 
+% 		 Zcommand(5) = 0.15 * sin(n / 7); 
+% 		 Zcommand(6) = 0.15 * sin(n / 13);
+% 
+% 		 Zcommand(7) = 0.05 * sin(n / 17);
+% 		 Zcommand(8) = 0.05 * sin(n / 19);
+% 		 Zcommand(9) = 0.05 * sin(n / 23);
+% 		 Zcommand(10) = 0.05 * sin(n / 29);
+% 
+% 		 Zcommand(11) = 0.02 * sin(n / 31);
+% 		 Zcommand(12) = 0.02 * sin(n / 37);
+% 		 Zcommand(13) = 0.02 * sin(n / 41);
+% 		 Zcommand(14) = 0.02 * sin(n / 43);
+% 		 Zcommand(15) = 0.02 * sin(n / 47);
+% 	 end
+% 	 zernikectrl.Data = single(Zcommand); 
 	 
 	 DMcommandP = dmctrl.Data; 
 	 

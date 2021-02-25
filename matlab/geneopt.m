@@ -1,7 +1,7 @@
 close all
 load('../data/calibration_forward.mat', 'cmask'); 
 
-N = 15e3; 
+N = 5e3; 
 save_frames = single(zeros(N, 256, 256)); % just to be double sure. 
 save_dmcommand = single(zeros(N, 97));
 save_sumstd = single(zeros(N, 10)); 
@@ -11,7 +11,7 @@ save_wfs_dy = single(zeros(N, sum(cmask)));
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
 
 dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
-if 1
+if 0
 	if 1
 		DMcommand = zeros(97, 1); 
 	else
@@ -104,7 +104,7 @@ while k < N
 	DMcommandHist = [DMcommandHist DMcommandP]; 
 	DMcommandStd = [DMcommandStd sumstd]; 
 	DMcommandK = [DMcommandK k]; 
-	agedecay = 1-((k - DMcommandK) / 15000); 
+	agedecay = 1-((k - DMcommandK) / 10000); 
 	% this, roughly, should mirror the photobleaching rate
 	% for the given excitation wavelength.
 	% seems with 7% power at 950nm, it halves over 10k frames. 

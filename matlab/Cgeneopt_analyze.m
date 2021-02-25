@@ -1,6 +1,6 @@
-load('../data/calibration_forward.mat'); 
-load('../data/calibration_flat.mat'); 
-load('../rundata/DMoptimization_950nm.mat'); 
+% load('../data/calibration_forward.mat'); 
+% load('../data/calibration_flat.mat'); 
+% load('../rundata/DMoptimization_950nm.mat'); 
 
 % this takes the output of a genetic optimization run, 
 % runs some diagnostics, 
@@ -14,8 +14,19 @@ frames_sum = sum(save_sumstd(:, 2:10), 2);
 plot(frames_sum); 
 
 nlenslets = sum(cmask); 
-[~, indx] = sort(frames_sum(14000:end), 'descend'); 
-indx = indx(1:100) + 14000 - 1; 
+sta = 2000;
+len = N-sta; 
+B = frames_sum(sta:end-1); % called 1 but really 10000
+A = [(0:len-1)' len*ones(len, 1)]; 
+c = A\B; 
+pred = A*c; 
+debleach = B-pred; 
+[~, indx] = sort(debleach(len-1000:end), 'descend'); % called 1 but really 4000 
+% hence called 4000 but really n + 3999 + 9999
+indx = indx(1:100) + sta + len - 1000 - 2; 
+hold on; 
+plot(indx, frames_sum(indx), 'ro'); 
+plot([sta:N-1], pred, 'g'); 
 avg_wfs_x = mean(double(save_wfs_dx(indx, :)), 1)'; 
 avg_wfs_y = mean(double(save_wfs_dy(indx, :)), 1)'; 
 
@@ -27,8 +38,8 @@ figure
 scatter3(mx, my, avg_wfs_y - my); 
 title('average dy for top solutions'); 
 
-figure; 
 avg_dmcommand = mean(save_dmcommand(indx, :), 1); 
+figure; 
 colors = jet(200); 
 colorindx = round((avg_dmcommand + 0.15) / 0.3 * 200); 
 colorindx = min(colorindx, 200); 
@@ -39,11 +50,13 @@ title('average DM control signals for top solutions');
 
 Best_DMcommand = avg_dmcommand; 
 genecalib = [avg_wfs_x avg_wfs_y];
+if 0
 save('../data/calibration_950geneopt.mat','Best_DMcommand','genecalib'); 
+end
 % save the absolute centroid positions
 % convert to relative later, depends on forward-calibration.
 
-movie_frames = single(zeros(256, 256, 1, 10000/4)); 
+movie_frames = single(zeros(256, 256, 1, N)); 
 maxx = max(save_frames, [], 'all'); 
 maxx = maxx / 4.0; 
 minn = min(save_frames, [], 'all');  

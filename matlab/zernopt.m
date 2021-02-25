@@ -6,14 +6,8 @@ zernikectrl = memmapfile('../shared_zernike.dat', ...
 	'Format','single','Offset',0,'Repeat',36,'Writable',true); 
 
 zcmd = zeros(36, 1); 
-zcmdhist = zeros(36, 500);
-zcmdv = zeros(1, 500); 
 zernikectrl.Data = single(zcmd); 
 %piston, tilt and tip are ignored.
-
-N = 200;
-save_zcmd = single(zeros(N, 36));
-save_sumstd = single(zeros(N, 10)); 
 
 udpr = dsp.UDPReceiver('LocalIPPort', 31313,'MessageDataType','double'); 
 
@@ -25,20 +19,11 @@ while ~isempty(datarx)
 	datarx = udpr(); 
 end
 
-disp('waiting for warm-up frames.'); 
-% the first forty frames are warm-up junk too
-while framen < 100
-	datarx = []; 
-	while(length(datarx) < 1)
-		datarx = udpr(); 
-	end
-	framen = framen+1; 
-end
-
 disp('grabbing data..'); 
 
-% some baseline activity here ...
-for j = 1:5
+% some baseline measurements to get the noise level
+baseline = zeros(20, 1); 
+for j = 1:20
 	framen = 0; 
 	sumstd = 0; 
 	while framen < 10
@@ -46,76 +31,85 @@ for j = 1:5
 		while(length(datarx) < 1)
 			datarx = udpr(); 
 		end
-		save_sumstd(j, framen+1) = datarx(1);
-		if framen > 2
+		if framen > 1
 			sumstd = sumstd + datarx(1); 
 		end
 		framen = framen+1; 
 	end
-	zcmdhist = [zcmdhist zcmd]; 
-	zcmdv = [zcmdv sumstd]; 
-	[~, indx] = sort(zcmdv, 'descend'); 
-	zcmdhist = zcmdhist(:, indx(1:200)); 
-	zcmdv = zcmdv(indx(1:200)); 
+	baseline(j) = sumstd; 
 end
 
-scl = 0.015;
-k = 4; 
-j = 1; 
-for order = 3:8
+orders = [3 4 5]; % one-indexed. 
+scls = [1 (1/1.75) (1/3.0625)] * 0.015; 
+indxs = [4 7 11];
+for o = 1:length(orders)
+	order = orders(o); 
+	scl = scls(o); 
+	k = indxs(o); 
 	for mode = 0:order-1
-		for b = -6:6
-			zcmd(k+mode) = b * scl; 
-			zernikectrl.Data = single(zcmd); 
-			if b == -5
-				% pause a bit at the beginning of the beams
-				% to let the DM settle
-				while framen < 5
-					datarx = []; 
-					while(length(datarx) < 1)
-						datarx = udpr(); 
+		if ((order ~= 3) || (mode ~= 1))
+			% ignore spherical, it just refocuses. 
+			save_intens = zeros(2, 17); 
+			save_cmd = zeros(2, 17, 36); 
+			for pass = 1:2
+				for b = -8:8
+					b2 = b * ((pass-1)*2-1); 
+					zcmd(k+mode) = b2 * scl; 
+					zernikectrl.Data = single(zcmd); 
+					if abs(b2) == 6
+						% pause a bit at the beginning of the beams
+						% to let the DM settle
+						while framen < 5
+							datarx = []; 
+							while(length(datarx) < 1)
+								datarx = udpr(); 
+							end
+							framen = framen+1; 
+						end
 					end
-					framen = framen+1; 
+					% now need to read in the intensity.. 
+					% it may take a few frames for the DM to respond, 
+					% plus transmission latencies etc. 
+					% scrap the first 2 received intensities
+					framen = 0; 
+					sumstd = 0; 
+					while framen < 10
+						datarx = []; 
+						while(length(datarx) < 1)
+							datarx = udpr(); 
+						end
+						if framen > 1
+							sumstd = sumstd + datarx(1); 
+						end
+						framen = framen+1; 
+					end
+					save_intens(pass, b2+9) = sumstd; 
+					save_cmd(pass, b2+9, :) = zcmd; 
 				end
 			end
-			% now need to read in the intensity.. 
-			% it may take a few frames for the DM to respond, 
-			% plus transmission latencies etc. 
-			% scrap the first 2 reeived intensities
-			framen = 0; 
-			sumstd = 0; 
-			while framen < 10
-				datarx = []; 
-				while(length(datarx) < 1)
-					datarx = udpr(); 
-				end
-				save_sumstd(j, framen+1) = datarx(1);
-				if framen > 1
-					sumstd = sumstd + datarx(1); 
-				end
-				framen = framen+1; 
+			intens2 = sum(save_intens, 1); 
+			[mx, indx] = sort(intens2, 'descend'); 
+			hold off; 
+			plot(intens2); 
+			hold on; 
+			plot(save_intens(1, :)*2, 'r')
+			plot(save_intens(2, :)*2, 'r')
+			title(['order ' num2str(order) ' mode ' num2str(mode)]); 
+			stb2 = 2.4*std(baseline);
+			plot(intens2 + stb2, 'g'); 
+			plot(intens2 - stb2, 'g'); 
+			drawnow;
+			if mx(1) - median(intens2) > stb2
+				disp([order mode indx(1)-9 mx(1)/1e6]); 
+				zcmd = save_cmd(1, indx(1), :); 
 			end
-			save_zcmd(j, :) = zcmd;
-			
-			zcmdhist = [zcmdhist zcmd]; 
-			zcmdv = [zcmdv sumstd]; 
-			[~, indx] = sort(zcmdv, 'descend'); 
-			zcmdhist = zcmdhist(:, indx(1:200)); 
-			zcmdv = zcmdv(indx(1:200)); 
-			if sum(zcmd == zcmdhist(:,1))==36 && sumstd == zcmdv(1)
-				disp([order mode b ...
-					zcmdv(1)/1e6, mean(zcmdv)/1e6])
-			end
-			zcmd = zcmdhist(:,1); % top so far.. 
-			zernikectrl.Data = single(zcmd); 
-			j = j+1; 
+		else
+			disp('skipping spherical')
 		end
 	end
-	k = k + order; 
-	scl = scl / 1.75; 
 end
-disp('done.') 
 
+disp('done evaluating, now blinking') 
 for i = 1:10
 	zernikectrl.Data = single(zeros(size(zcmd)));
 	pause(1); 
@@ -124,3 +118,4 @@ for i = 1:10
 end
 
 release(udpr); 
+disp('compeleted'); 
