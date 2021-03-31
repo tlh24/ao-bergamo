@@ -15,7 +15,7 @@ setup(udpr);
 
 % drain the buffer, if need be. 
 datarx = 1; 
-while ~isempty(datarx)
+while ~isempty(datarx) 
 	datarx = udpr(); 
 end
 
