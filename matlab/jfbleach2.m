@@ -65,6 +65,8 @@ power_meas = [
 % 1230nm: 62% = 18mW at the sample
 % 940nm: 47% = 30mW at the sample
 % 1230nm: 100% = 30.4mW at the sample
+% 1040nm, fixed output: 29% = 30.5mW at the sample. 
+% 1040nm, variable: 60% = 30.4mW at the sample. 
 			
 subplot(1, 2, 1)
 hold on
