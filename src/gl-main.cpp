@@ -117,7 +117,10 @@ Gtk_CheckboxLabel g_display_camimage(true);
 Gtk_CheckboxLabel g_display_centroids(true); 
 Gtk_CheckboxLabel g_display_calib_centroids(true); 
 Gtk_CheckboxLabel g_test_dm(false); 
+Gtk_CheckboxLabel g_zero_dm(false); 
 Gtk_CheckboxLabel g_control_dm(false); 
+GtkWidget* g_geneoptCombo = NULL; 
+int g_geneopt_active = 0; 
 
 int init_resources() {
 	/* Initialize the FreeType2 library */
@@ -688,6 +691,11 @@ void Gtk_CheckboxLabel_clicked(GtkWidget *widget, gpointer gdata){
 	Gtk_CheckboxLabel* chk = (Gtk_CheckboxLabel*)gdata; 
 	chk->clicked(); 
 }
+void geneoptComboCB(GtkWidget *widget, gpointer gdata){
+	g_geneopt_active = gtk_combo_box_get_active(
+		GTK_COMBO_BOX(g_geneoptCombo));
+	printf("%s calibration activated.\n", dm_control_geneopt_name(g_geneopt_active));
+}
 
 gint glarea_motion_notify(GtkWidget *widget, GdkEventMotion *event){
 	gint			x, y;
@@ -884,7 +892,7 @@ GtkWidget *create_gl_window(){
 	g_framerate_label.make("framerate:", bx2); 
 	g_dataSize_label.make("data size:", bx2); 
 	
-	GtkWidget *button = gtk_button_new_with_label("recalibrate");
+	GtkWidget *button = gtk_button_new_with_label("reinit centroids (flat)");
 	g_signal_connect(button,"clicked", 
 							G_CALLBACK(recalibrate_clicked), NULL);
 	gtk_box_pack_start (GTK_BOX (bx2), button, FALSE, FALSE, 2);
@@ -904,7 +912,22 @@ GtkWidget *create_gl_window(){
 	g_display_centroids.make("display centrods", bx2); 
 	g_display_calib_centroids.make("disp calibration", bx2); 
 	g_test_dm.make("test deformable mirror", bx2); 
+	g_zero_dm.make("zero DM command", bx2);
 	g_control_dm.make("closed-loop control of DM", bx2);
+	
+	g_geneoptCombo = gtk_combo_box_text_new ();
+	for(int j=0; j<dm_control_geneopt_num(); j++){
+		gtk_combo_box_text_append_text (
+			GTK_COMBO_BOX_TEXT (g_geneoptCombo), 
+			dm_control_geneopt_name(j) );
+	}
+	gtk_combo_box_set_active (GTK_COMBO_BOX (g_geneoptCombo), 0);
+	g_signal_connect (g_geneoptCombo,
+                    "changed",
+                    G_CALLBACK (geneoptComboCB),
+                    NULL);
+	gtk_box_pack_start (GTK_BOX (bx2), g_geneoptCombo, FALSE, FALSE, 2);
+
 	
 	int i=0; 
 	char lbl[128]; 

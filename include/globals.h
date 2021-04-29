@@ -126,19 +126,23 @@ extern bool g_calibrated;
 extern bool g_reset_data; //clear memory
 extern bool g_write_data; //write to disc
 extern Gtk_CheckboxLabel g_test_dm; 
+extern Gtk_CheckboxLabel g_zero_dm; 
 extern Gtk_CheckboxLabel g_control_dm;
 extern Gtk_CheckboxLabel g_record_data; 
 extern int g_nFrames;
 extern Gtk_UpdateLabel g_centroidCalc_label;
 extern Gtk_UpdateLabel g_framerate_label;
 extern Gtk_UpdateLabel g_dataSize_label;
+extern int g_geneopt_active;
 
 
 void* video_thread(void*);
 
 bool dm_control_init(); 
-void dm_control_run(float* zernike, float* ctrl);
+void dm_control_run(float* zernike, int geneopt_active, float* ctrl);
 void dm_rand_stim(float* ctrl); 
 void dm_control_cleanup(); 
+int dm_control_geneopt_num();
+const char* dm_control_geneopt_name(int indx);
 
 #endif

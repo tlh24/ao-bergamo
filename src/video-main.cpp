@@ -594,12 +594,18 @@ void* video_thread(void*){
 						dm_rand_stim(dm_data); 
 						memcpy(mmap_dmctrl, dm_data, 97*4); 
 					}else{
-						if(g_control_dm.get() && g_dmcontrolen){
-							dm_control_run(mmap_zernike, dm_data); 
-							//echo command to matlab for visualization.
+						if(g_zero_dm.get()){
+							for(int j=0; j<97; j++)
+								dm_data[j] = 0.0; 
 							memcpy(mmap_dmctrl, dm_data, 97*4); 
 						}else{
-							memcpy(dm_data, mmap_dmctrl, 97*4); 
+							if(g_control_dm.get() && g_dmcontrolen){
+								dm_control_run(mmap_zernike, g_geneopt_active, dm_data); 
+								//echo command to matlab for visualization.
+								memcpy(mmap_dmctrl, dm_data, 97*4); 
+							}else{
+								memcpy(dm_data, mmap_dmctrl, 97*4); 
+							}
 						}
 					}
 					if(0){

@@ -14,11 +14,28 @@
 #include <gdk/gdk.h>
 #include "globals.h"
 
+#define geneopt_num 5
+
+const char* geneopt_fnames[] = {
+	"data/calibration_950geneopt.mat",
+	"data/calibration_1030geneopt.mat", 
+	"data/calibration_fixed1040geneopt.mat", 
+	"data/calibration_1225geneopt.mat", 
+	"data/calibration_1225geneopt_2.mat", 
+};
+const char* geneopt_names[] = {
+	"950nm",
+	"1030nm", 
+	"fixed1040nm", 
+	"1225nm", 
+	"1225nm v2", 
+};
+
 unsigned char g_cmask[3000]; 
 int g_activeCentroids = 0; 
 int g_nZernike = 0; 
 gsl_matrix* g_cforward = NULL; //forward transform from centroids to dm
-gsl_matrix* g_genecalib = NULL; //'flat' as determined via genetic algos
+gsl_matrix* g_genecalib[geneopt_num]; //'system flat' as determined via genetic algos
 gsl_matrix* g_dat = NULL; // copy matrix for condensed centroid data
 gsl_matrix* g_zcoef = NULL; //commanded zernike coefficients.
 gsl_matrix* g_Z = NULL; 
@@ -50,7 +67,7 @@ bool read_matfile_variable(
 					}
 				}
 			} else {
-				printf("variable %s in %s should be type doulbe\n", vname, fname); 
+				printf("variable %s in %s should be type double\n", vname, fname); 
 				return false;
 			}
 		} else {
@@ -117,15 +134,17 @@ bool dm_control_init()
 	Mat_Close(matfp);
 	if(!res) return res; 
 	
-	matfp = Mat_Open("data/calibration_geneopt.mat",MAT_ACC_RDONLY); 
-	if ( NULL == matfp ) { 
-		fprintf(stderr,"Error opening calibration_geneopt.mat"); 
-		return false; 
+	for(int j=0; j<geneopt_num; j++){
+		matfp = Mat_Open(geneopt_fnames[j], MAT_ACC_RDONLY); 
+		if ( NULL == matfp ) { 
+			fprintf(stderr,"Error opening %s", geneopt_fnames[j]); 
+			return false; 
+		}
+		res = read_matfile_variable(matfp, geneopt_names[j], "genecalib", g_activeCentroids, 2, &(g_genecalib[j])); 
+		if(!res){ return res; }
+		Mat_Close(matfp);
 	}
-	res = read_matfile_variable(matfp, "data/calibration_geneopt.mat", "genecalib", g_activeCentroids, 2, &g_genecalib); 
-	if(!res){ return res; }
-	Mat_Close(matfp);
-	// dupicate this matrix for actively updated centroid info
+	// allocate a matrix for actively updated centroid info
 	if(g_dat) gsl_matrix_free(g_dat); 
 	g_dat = gsl_matrix_alloc(g_activeCentroids, 2); 
 	
@@ -151,7 +170,7 @@ bool dm_control_init()
 	return true; 
 }
 
-void dm_control_run(float* zernike, float* command)
+void dm_control_run(float* zernike, int geneopt_active, float* command)
 // zernike is eg 36x1; command is eg 97x1.
 {
 	int k = 0; 
@@ -162,7 +181,7 @@ void dm_control_run(float* zernike, float* command)
 			k++; 
 		}
 	}
-	gsl_matrix_sub(g_dat, g_genecalib); // this is dx and dy, flat-compensated. output is on g_dat.
+	gsl_matrix_sub(g_dat, g_genecalib[geneopt_active]); // this is dx and dy, flat-compensated. output is on g_dat.
 	
 	for(int i=0; i<g_nZernike; i++){
 		gsl_matrix_set(g_zcoef, i, 0, zernike[i]); 
@@ -213,7 +232,7 @@ void dm_rand_stim(float* command)
 {
 	//command = Z * randn(36, 1) + randn(97, 1) .* 0.022; 
 	if(g_dmcommand == NULL || g_dmZ == NULL){
-		printf("g_dmcommand variable not initialize.. bad file?\n"); 
+		printf("g_dmcommand variable not initialized .. bad file?\n"); 
 		return; 
 	}
 	for(int i=0; i<97; i++){
@@ -240,7 +259,9 @@ void dm_rand_stim(float* command)
 void dm_control_cleanup()
 {
 	if(g_cforward) gsl_matrix_free(g_cforward); 
-	if(g_genecalib) gsl_matrix_free(g_genecalib); 
+	for(int j=0; j<geneopt_num; j++){
+		if(g_genecalib[j]) gsl_matrix_free(g_genecalib[j]);
+	}
 	if(g_dat) gsl_matrix_free(g_dat); 
 	if(g_zcoef) gsl_matrix_free(g_zcoef); 
 	if(g_Z) gsl_matrix_free(g_Z); 
@@ -248,4 +269,11 @@ void dm_control_cleanup()
 	if(g_dZy) gsl_matrix_free(g_dZy);
 	if(g_dmcommand) gsl_matrix_free(g_dmcommand);
 	if(g_dmZ) gsl_matrix_free(g_dmZ);
+}
+
+int dm_control_geneopt_num(){
+	return geneopt_num; 
+}
+const char* dm_control_geneopt_name(int indx){
+	return geneopt_names[indx]; 
 }

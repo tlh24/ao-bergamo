@@ -1,7 +1,7 @@
-close all
 load('../data/calibration_forward.mat', 'cmask'); 
+load('../data/DMcommand_1225.mat'); 
 
-N = 5e3; 
+N = 15e3; 
 save_frames = single(zeros(N, 256, 256)); % just to be double sure. 
 save_dmcommand = single(zeros(N, 97));
 save_sumstd = single(zeros(N, 10)); 
@@ -11,16 +11,17 @@ save_wfs_dy = single(zeros(N, sum(cmask)));
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
 
 dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
-if 0
-	if 1
-		DMcommand = zeros(97, 1); 
-	else
+
+if 1
+	DMcommand = zeros(97, 1); 
+	if 0
 		load('../Best_DMcommand4.mat'); 
 		Best_DMcommand = reshape(Best_DMcommand, 97, 1); % transpose
 		DMcommand = Best_DMcommand; 
 	end
 	DMcommandHist = repmat(DMcommand, 1, 100); 
 end
+
 DMcommandStd = zeros(1, 100);
 DMcommandK = zeros(1, 100); 
 
@@ -28,12 +29,14 @@ DMcommandK = zeros(1, 100);
 dmangle = angle([dmx + 1i*dmy]); 
 dmctrl.Data = single(DMcommand); 
 
+disp('grabbing data..'); 
+
 sock = tcpip('0.0.0.0', 31313, 'NetworkRole', 'server');
 sock.InputBufferSize = 512*513; 
 disp('ok go.'); 
 fopen(sock); % waits for a connection 
 
-
+bleach_correct = 3000; 
 temperature = 0.01; 
 starttemp = 0.005; % naive start = 0.008
 endtemp = 0.001; 
@@ -104,7 +107,13 @@ while k < N
 	DMcommandHist = [DMcommandHist DMcommandP]; 
 	DMcommandStd = [DMcommandStd sumstd]; 
 	DMcommandK = [DMcommandK k]; 
-	agedecay = 1-((k - DMcommandK) / 10000); 
+	if mean(k-DMcommandK) > 400
+		bleach_correct = bleach_correct * 0.99 
+	end
+	if mean(k-DMcommandK) < 50 && k > 1000
+		bleach_correct = bleach_correct * 1.005
+	end
+	agedecay = 1-((k - DMcommandK) / bleach_correct); 
 	% this, roughly, should mirror the photobleaching rate
 	% for the given excitation wavelength.
 	% seems with 7% power at 950nm, it halves over 10k frames. 

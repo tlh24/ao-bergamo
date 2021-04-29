@@ -1,6 +1,8 @@
-% load('../data/calibration_forward.mat'); 
-% load('../data/calibration_flat.mat'); 
-% load('../rundata/DMoptimization_950nm.mat'); 
+load('../data/calibration_forward.mat'); 
+load('../data/calibration_flat.mat'); 
+% load('../rundata/DMoptimization_1225nm.mat'); 
+% I think this 1225 run might be bad... 
+% low SNR on the NV ND, and relatively rapid bleaching. 
 
 % this takes the output of a genetic optimization run, 
 % runs some diagnostics, 
@@ -14,16 +16,17 @@ frames_sum = sum(save_sumstd(:, 2:10), 2);
 plot(frames_sum); 
 
 nlenslets = sum(cmask); 
-sta = 2000;
+sta = 12000;
+N = size(save_dmcommand, 1); 
 len = N-sta; 
 B = frames_sum(sta:end-1); % called 1 but really 10000
 A = [(0:len-1)' len*ones(len, 1)]; 
 c = A\B; 
 pred = A*c; 
 debleach = B-pred; 
-[~, indx] = sort(debleach(len-1000:end), 'descend'); % called 1 but really 4000 
+[~, indx] = sort(debleach(len-2000:end), 'descend'); % called 1 but really 4000 
 % hence called 4000 but really n + 3999 + 9999
-indx = indx(1:100) + sta + len - 1000 - 2; 
+indx = indx(1:100) + sta + len - 2000 - 2; 
 hold on; 
 plot(indx, frames_sum(indx), 'ro'); 
 plot([sta:N-1], pred, 'g'); 
@@ -50,8 +53,8 @@ title('average DM control signals for top solutions');
 
 Best_DMcommand = avg_dmcommand; 
 genecalib = [avg_wfs_x avg_wfs_y];
-if 0
-save('../data/calibration_950geneopt.mat','Best_DMcommand','genecalib'); 
+if 1
+save('../data/calibration_1225geneopt_2.mat','Best_DMcommand','genecalib'); 
 end
 % save the absolute centroid positions
 % convert to relative later, depends on forward-calibration.
@@ -60,7 +63,7 @@ movie_frames = single(zeros(256, 256, 1, N));
 maxx = max(save_frames, [], 'all'); 
 maxx = maxx / 4.0; 
 minn = min(save_frames, [], 'all');  
-for k = 1:4:10000
+for k = 1:4:5000
 	frame = save_frames(k, :, :); 
 	frame = frame + save_frames(k+1, :, :);
 	frame = frame + save_frames(k+2, :, :);
