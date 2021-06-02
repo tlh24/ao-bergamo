@@ -1,7 +1,8 @@
 load('../data/calibration_forward.mat', 'cmask'); 
-load('../data/DMcommand_1225.mat'); 
+% load('../data/DMcommand_1225.mat'); 
 
 N = 15e3; 
+bleach_correct = 8000; 
 save_frames = single(zeros(N, 256, 256)); % just to be double sure. 
 save_dmcommand = single(zeros(N, 97));
 save_sumstd = single(zeros(N, 10)); 
@@ -36,7 +37,6 @@ sock.InputBufferSize = 512*513;
 disp('ok go.'); 
 fopen(sock); % waits for a connection 
 
-bleach_correct = 3000; 
 temperature = 0.01; 
 starttemp = 0.005; % naive start = 0.008
 endtemp = 0.001; 
@@ -107,11 +107,11 @@ while k < N
 	DMcommandHist = [DMcommandHist DMcommandP]; 
 	DMcommandStd = [DMcommandStd sumstd]; 
 	DMcommandK = [DMcommandK k]; 
-	if mean(k-DMcommandK) > 400
-		bleach_correct = bleach_correct * 0.99 
+	if mean(k-DMcommandK) > 450
+		bleach_correct = bleach_correct * 0.99461 
 	end
-	if mean(k-DMcommandK) < 50 && k > 1000
-		bleach_correct = bleach_correct * 1.005
+	if mean(k-DMcommandK) < 110 && k > 1000
+		bleach_correct = bleach_correct * 1.00237
 	end
 	agedecay = 1-((k - DMcommandK) / bleach_correct); 
 	% this, roughly, should mirror the photobleaching rate

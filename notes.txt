@@ -79,3 +79,13 @@ Testing this code was done on Chris Magnus's GFP labeled VTA neurons
 He mad some 300um slices of a fixed brain for this purpose; it's working very well for testing. 
 Still, don't get a dramatic improvement in intensity. 
 Will need to test on a window?
+
+June 2 2021
+The 1um poystyrene beds don't seem to bleach! Or, at least, they bleach very very slowly.  
+Power was 4% at 960nm.  
+SNR at this power level was very good (though I could have tweaked the GDD a little too.. maxed out is probably the best. )
+
+Green retrobeads are nearly as good -- though my test slide has a much thinner layer than the 1um PS beads. 
+They started to bleach (?) after about 10k frames.  Which is plenty for optimization! 
+
+Got some example images from the levelling scope -- will need a custom GUI for aligning the window.  I'm thinking actual = green; refrence = magenta.  
