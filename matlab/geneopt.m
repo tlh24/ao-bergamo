@@ -1,5 +1,4 @@
 load('../data/calibration_forward.mat', 'cmask'); 
-% load('../data/DMcommand_1225.mat'); 
 
 N = 15e3; 
 bleach_correct = 8000; 
@@ -15,8 +14,9 @@ dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat'
 
 if 1
 	DMcommand = zeros(97, 1); 
-	if 0
-		load('../Best_DMcommand4.mat'); 
+	if 1
+		fname = '960nm_PSbeads_1';
+		load(['../data/calibration_' fname '_geneopt.mat'])
 		Best_DMcommand = reshape(Best_DMcommand, 97, 1); % transpose
 		DMcommand = Best_DMcommand; 
 	end
@@ -38,7 +38,7 @@ disp('ok go.');
 fopen(sock); % waits for a connection 
 
 temperature = 0.01; 
-starttemp = 0.005; % naive start = 0.008
+starttemp = 0.005; % start from zero DM command: 0.005
 endtemp = 0.001; 
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
