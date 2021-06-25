@@ -107,11 +107,13 @@ while k < N
 	DMcommandHist = [DMcommandHist DMcommandP]; 
 	DMcommandStd = [DMcommandStd sumstd]; 
 	DMcommandK = [DMcommandK k]; 
-	if mean(k-DMcommandK) > 450
-		bleach_correct = bleach_correct * 0.99461 
-	end
-	if mean(k-DMcommandK) < 110 && k > 1000
-		bleach_correct = bleach_correct * 1.00237
+	if 1
+		if mean(k-DMcommandK) > 450
+			bleach_correct = bleach_correct * 0.99461 
+		end
+		if mean(k-DMcommandK) < 110 && k > 1000
+			bleach_correct = bleach_correct * 1.00237
+		end
 	end
 	agedecay = 1-((k - DMcommandK) / bleach_correct); 
 	% this, roughly, should mirror the photobleaching rate
