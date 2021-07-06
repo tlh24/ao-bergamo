@@ -1,6 +1,6 @@
 load('../data/calibration_forward.mat'); 
 load('../data/calibration_flat.mat'); 
-fname = '1010nm_4nmAu_1';
+fname = '960nm_PSbeads_1';
 load(['../rundata/DMoptimization_' fname '.mat']); 
 % I think this 1225 run might be bad... 
 % low SNR on the NV ND, and relatively rapid bleaching. 
