@@ -1,0 +1,32 @@
+1 Coherent Chameleon NX TPC, Variable and fixed outputs. 
+2 Half Wave plate, Thorlabs WPHSM05-1030, on 1040nm output. 
+3 Polarizing beam splitter, Thorlabs PBS103
+4 3x Beam expander, Thorlabs GBE03-B
+5 12kHz resonant Galvo mirror, Cambridge Scientific
+6 f=50mm scan lens, Thorlabs SL50-2P2
+7 Longpass dichroic mirror, 735 nm, DMLP735B
+8 Laser diode, Thorlabs HL6750MG
+9 f=200mm tube lens, Thorlabs TL200-2P2
+10 42mm  x 60mm elliptic mirror, Edmund Optics #89-458
+11 Deformable mirror, Alpao DM97-25
+12 Window levelling drop-in lens, Thorlabs AC254-300-B and AC254-500-B
+13 Custom tube lens, Edmund Optics #49-386 and #49-385
+14 Epi tube lens, Thorlabs TTL200-A
+15 Wavefront sensor pupil relay, Thorlabs AC254-100-B
+16 Wavefront sensor pupil relay, 2x Thorabs AC254-080-B
+17 Shortpass filter, Thorlabs DMSP805
+18 Microlens array, f=14.6mm, 300um pitch, Thorlabs MLA300-14AR
+19 CMOS Camera, Basler acA2040-90um
+20 Longpass dichroic, 498 nm, Thorlabs MD498
+21 Shortpass dichroic, 650nm, Thorlabs DMSP650R
+22 Emission filter, MF525-39
+23 CMOS Camera, ImagingSource DMK33UX249
+24 Excitation filter, Thorlabs MF469-35
+25 LED iluminator, Thorlabs M450LP1, aspheric condenser ACL25416U, f=75mm lens LB1901-A
+26 f=175mm lens, Thorlabs LA4924-A
+27 CMOS camera, Basler acA2500-60um
+28 Removable longpass, Chroma ET780lp
+29 Switchable longpass, from Bergamo II
+30 PMT arm from Bergamo II
+31 Objective, Olympus XLUMPlanFL N 20x / 1.0 W
+
