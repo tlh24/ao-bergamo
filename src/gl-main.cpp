@@ -121,6 +121,7 @@ Gtk_CheckboxLabel g_zero_dm(false);
 Gtk_CheckboxLabel g_control_dm(false); 
 GtkWidget* g_geneoptCombo = NULL; 
 int g_geneopt_active = 0; 
+float g_svd_uival[10]; // slider control values, [-1 .. 1]. 
 
 int init_resources() {
 	/* Initialize the FreeType2 library */
@@ -696,6 +697,12 @@ void geneoptComboCB(GtkWidget *widget, gpointer gdata){
 		GTK_COMBO_BOX(g_geneoptCombo));
 	printf("%s calibration activated.\n", dm_control_geneopt_name(g_geneopt_active));
 }
+void wavefront_scaler_changed(GtkWidget *widget, gpointer p){
+	int k = (int)((long long)p & 0xf);
+	double v = gtk_range_get_value(GTK_RANGE(widget));
+	printf("wavefront svd %d at %f\n", k, v); 
+	g_svd_uival[k] = v; 
+}
 
 gint glarea_motion_notify(GtkWidget *widget, GdkEventMotion *event){
 	gint			x, y;
@@ -936,6 +943,27 @@ GtkWidget *create_gl_window(){
 											updateExposureCB, GINT_TO_POINTER(0)); 
 	g_actuatorSpin = mk_spinner("DM actuator", bx2, 0, 0, 96, 1, 
 										 updateActuatorCB, GINT_TO_POINTER(0)); 
+	
+	// sliders for adjusting the wavefront. 
+	GtkWidget *bx3 = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 1);
+	for(i=0; i<10; i++){
+		GtkWidget * scaler = 
+			gtk_scale_new_with_range (GTK_ORIENTATION_VERTICAL,
+										-1.0, 1.0, 0.001);
+// 		gtk_scale_set_digits (GTK_SCALE(scaler), 3); 
+		gtk_scale_set_draw_value (GTK_SCALE(scaler), FALSE); 
+		gtk_scale_add_mark (GTK_SCALE(scaler), 0.0, GTK_POS_RIGHT, NULL); 
+		gtk_range_set_value(GTK_RANGE(scaler), 0.0); 
+		g_svd_uival[i] = 0.0; 
+		gtk_widget_set_size_request (scaler, 40, 800); 
+		//need to add a callback handler here.
+		g_signal_connect(scaler,
+						"value_changed",
+						G_CALLBACK (wavefront_scaler_changed), 
+						(GINT_TO_POINTER(i)));
+		gtk_box_pack_start(GTK_BOX (bx3), scaler, FALSE, FALSE, 2);
+	}
+	gtk_box_pack_start (GTK_BOX(bx2), bx3, FALSE, FALSE, 2);
 	
 	g_logarea = gtk_text_view_new();
 	GtkWidget* scrolledwindow = gtk_scrolled_window_new(NULL, NULL);

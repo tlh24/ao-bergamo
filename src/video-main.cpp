@@ -600,7 +600,7 @@ void* video_thread(void*){
 							memcpy(mmap_dmctrl, dm_data, 97*4); 
 						}else{
 							if(g_control_dm.get() && g_dmcontrolen){
-								dm_control_run(mmap_zernike, g_geneopt_active, dm_data); 
+								dm_control_run(mmap_zernike, g_geneopt_active, dm_data, g_svd_uival); 
 								//echo command to matlab for visualization.
 								memcpy(mmap_dmctrl, dm_data, 97*4); 
 							}else{

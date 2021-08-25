@@ -134,12 +134,13 @@ extern Gtk_UpdateLabel g_centroidCalc_label;
 extern Gtk_UpdateLabel g_framerate_label;
 extern Gtk_UpdateLabel g_dataSize_label;
 extern int g_geneopt_active;
+extern float g_svd_uival[10]; 
 
 
 void* video_thread(void*);
 
 bool dm_control_init(); 
-void dm_control_run(float* zernike, int geneopt_active, float* ctrl);
+void dm_control_run(float* zernike, int geneopt_active, float* ctrl, float* svd_uival);
 void dm_rand_stim(float* ctrl); 
 void dm_control_cleanup(); 
 int dm_control_geneopt_num();
