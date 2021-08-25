@@ -14,12 +14,13 @@
 #include <gdk/gdk.h>
 #include "globals.h"
 
-#define geneopt_num 9
+#define geneopt_num 10
 
 const char* geneopt_fnames[] = {
 	"data/calibration_950nm_1_geneopt.mat",
 	"data/calibration_950nm_2_geneopt.mat", 
 	"data/calibration_960nm_PSbeads_1_geneopt.mat", 
+	"data/calibration_960nm_PSbeads_long4_geneopt.mat",
 	"data/calibration_960nm_Retrobeads_1_geneopt.mat", 
 	"data/calibration_960nm_300um_1_geneopt.mat", 
 	"data/calibration_960nm_500um_1_geneopt.mat", 
@@ -31,6 +32,7 @@ const char* geneopt_names[] = {
 	"950nm #1",
 	"950nm #2",
 	"960nm PSbeads", 
+	"960nm PSbeads SVD",
 	"960nm Retrobeads", 
 	"960nm 300um", 
 	"960nm 500um", 
@@ -43,7 +45,11 @@ unsigned char g_cmask[3000];
 int g_activeCentroids = 0; 
 int g_nZernike = 0; 
 gsl_matrix* g_cforward = NULL; //forward transform from centroids to dm
+
 gsl_matrix* g_genecalib[geneopt_num]; //'system flat' as determined via genetic algos
+gsl_matrix* g_svd_wfs_x[geneopt_num]; // signular values found during DM geneopt
+gsl_matrix* g_svd_wfs_y[geneopt_num]; // add these to system flat above
+gsl_matrix* g_svd_scl[geneopt_num]; // scale of the singular values.
 gsl_matrix* g_dat = NULL; // copy matrix for condensed centroid data
 gsl_matrix* g_zcoef = NULL; //commanded zernike coefficients.
 gsl_matrix* g_Z = NULL; 
@@ -150,6 +156,17 @@ bool dm_control_init()
 		}
 		res = read_matfile_variable(matfp, geneopt_names[j], "genecalib", g_activeCentroids, 2, &(g_genecalib[j])); 
 		if(!res){ return res; }
+		
+		//see if this file was long / has SVD variables. 
+		res = read_matfile_variable(matfp, geneopt_names[j], "svd_wfs_x", g_activeCentroids, 10, &(g_svd_wfs_x[j])); 
+		if(res){ printf("SVD X data found for %s\n", geneopt_names[j]);  }
+		
+		res = read_matfile_variable(matfp, geneopt_names[j], "svd_wfs_y", g_activeCentroids, 10, &(g_svd_wfs_y[j])); 
+		if(res){ printf("SVD Y data found for %s\n", geneopt_names[j]); }
+		
+		res = read_matfile_variable(matfp, geneopt_names[j], "svd_scl", 1, 10, &(g_svd_scl[j])); 
+		if(res){ printf("SVD scl data found for %s\n", geneopt_names[j]); }
+		
 		Mat_Close(matfp);
 	}
 	// allocate a matrix for actively updated centroid info
@@ -178,7 +195,7 @@ bool dm_control_init()
 	return true; 
 }
 
-void dm_control_run(float* zernike, int geneopt_active, float* command)
+void dm_control_run(float* zernike, int geneopt_active, float* command, float* svd_uival)
 // zernike is eg 36x1; command is eg 97x1.
 {
 	int k = 0; 
@@ -189,13 +206,46 @@ void dm_control_run(float* zernike, int geneopt_active, float* command)
 			k++; 
 		}
 	}
-	gsl_matrix_sub(g_dat, g_genecalib[geneopt_active]); // this is dx and dy, flat-compensated. output is on g_dat.
+#define CBNT CblasNoTrans
+#define CBT CblasTrans
+	//see if this calibration has SVD basis vectors.
+	if(g_svd_wfs_x[geneopt_active] != NULL && g_svd_wfs_y[geneopt_active] != NULL && g_svd_scl[geneopt_active] != NULL){
+		gsl_matrix* scl = gsl_matrix_alloc(10, 1); 
+		for(int i=0; i<10; i++){
+			gsl_matrix_set(scl, i, 0,
+				svd_uival[i] * gsl_matrix_get(g_svd_scl[geneopt_active],0,i) ); 
+		}
+		gsl_matrix* wfx = gsl_matrix_alloc(g_activeCentroids, 1); 
+		gsl_matrix* wfy = gsl_matrix_alloc(g_activeCentroids, 1); 
+		for(int i=0; i<g_activeCentroids; i++){
+			gsl_matrix_set(wfx, i, 0, 
+				gsl_matrix_get(g_genecalib[geneopt_active], i, 0)); 
+			gsl_matrix_set(wfy, i, 0, 
+				gsl_matrix_get(g_genecalib[geneopt_active], i, 1)); 
+		}
+		gsl_blas_dgemm(CBNT, CBNT, 1.0, 
+			g_svd_wfs_x[geneopt_active], scl, 1.0, wfx); 
+		gsl_blas_dgemm(CBNT, CBNT, 1.0, 
+			g_svd_wfs_y[geneopt_active], scl, 1.0, wfy); 
+		gsl_matrix* tweakedflat = gsl_matrix_alloc(g_activeCentroids, 2); 
+		for(int i=0; i<g_activeCentroids; i++){
+			gsl_matrix_set(tweakedflat, i, 0, 
+					gsl_matrix_get(wfx, i, 0)); 
+			gsl_matrix_set(tweakedflat, i, 1, 
+					gsl_matrix_get(wfy, i, 0)); 
+		}
+		gsl_matrix_sub(g_dat, tweakedflat); // this is dx and dy, flat-compensated. output is on g_dat.
+		gsl_matrix_free(scl); 
+		gsl_matrix_free(wfx); 
+		gsl_matrix_free(wfy); 
+		gsl_matrix_free(tweakedflat); 
+	} else {
+		gsl_matrix_sub(g_dat, g_genecalib[geneopt_active]); // this is dx and dy, flat-compensated. output is on g_dat.
+	}
 	
 	for(int i=0; i<g_nZernike; i++){
 		gsl_matrix_set(g_zcoef, i, 0, zernike[i]); 
 	}
-#define CBNT CblasNoTrans
-#define CBT CblasTrans
 	gsl_matrix* desdx = gsl_matrix_alloc(g_activeCentroids, 1); 
 	gsl_matrix* desdy = gsl_matrix_alloc(g_activeCentroids, 1); 
 	gsl_blas_dgemm(CBNT, CBNT, 1.0, g_dZx, g_zcoef, 0.0, desdx); 

@@ -1,8 +1,8 @@
 load('../data/calibration_forward.mat'); 
 load('../data/calibration_flat.mat'); 
-fname = '960nm_PSbeads_1';
+fname = '960nm_PSbeads_11';
 load(['../rundata/DMoptimization_' fname '.mat']); 
-% I think this 1225 run might be bad... 
+% I think the 1225 run might be bad... 
 % low SNR on the NV ND, and relatively rapid bleaching. 
 
 % this takes the output of a genetic optimization run, 
@@ -54,7 +54,7 @@ title('average DM control signals for top solutions');
 
 Best_DMcommand = avg_dmcommand; 
 genecalib = [avg_wfs_x avg_wfs_y];
-if 1
+if 0
 save(['../data/calibration_' fname '_geneopt.mat'],'Best_DMcommand','genecalib'); 
 end
 % save the absolute centroid positions
