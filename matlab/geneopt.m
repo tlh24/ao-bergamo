@@ -1,7 +1,7 @@
 % udpr = dsp.UDPReceiver('LocalIPPort', 31313,...
 % 	'MessageDataType','double'); 
 
-N = 20e3; 
+N = 10e3; 
 NN = N*10;
 bleach_correct = 12000; 
 
@@ -28,10 +28,13 @@ dmctrl.Data = single(DMcommand);
 % end
 
 temperature = 0.01; 
-starttemp = 0.006; % start from zero DM command: 0.005
+starttemp = 0.005; % start from zero DM command: 0.005
 endtemp = 0.0015; 
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
+
+load('../data/calibration_960nm_PSbeads_long4_geneopt.mat', ...
+	'Best_DMcommand'); 
 
 sock = tcpip('0.0.0.0', 31313, 'NetworkRole', 'server');
 sock.InputBufferSize = 512*513; 
@@ -43,7 +46,11 @@ while k < NN
 	% periodically reset the algorithm, 
 	% to get new draws from the optimization distro. 
 	if mod(k, N) == 1
-		DMcommand = zeros(97, 1); 
+		if 1
+			DMcommand = Best_DMcommand'; 
+		else
+			DMcommand = zeros(97, 1); 
+		end
 		DMcommandHist = repmat(DMcommand, 1, 100); 
 		DMcommandStd = zeros(1, 100);
 		DMcommandK = zeros(1, 100); 

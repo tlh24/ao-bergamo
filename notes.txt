@@ -89,3 +89,19 @@ Green retrobeads are nearly as good -- though my test slide has a much thinner l
 They started to bleach (?) after about 10k frames.  Which is plenty for optimization! 
 
 Got some example images from the levelling scope -- will need a custom GUI for aligning the window.  I'm thinking actual = green; refrence = magenta.  
+
+August 27 2021
+Gree latex retrobeads do not seem to bleach too quickly!  That's good!
+
+Today experimented with SVD of the calibration matrix. 
+It looks OK... 
+for optimization, suggest we take the components from that, regress them to the associated DM actuator values (through the forward matrix), 
+and then search along these directions for online wavefront optimization. 
+
+Also of note: experimented with tweaking the SVD components today while trying to bleach the retrobeads.  The middle setting (e.g. no modification) was consistently the best in terms of brightness for the retrobeads image. 
+This adds more evidence to the idea that in order to improve image quality in vivo, 
+we need to run the optimization in vivo.  
+A corrolary question is: how can we optimize the optimizer? 
+Making it operate in a basis set different than the raw actuator values makes sense ... it may also be the case that the function is convex (?) which means that variables can be optimized serially, 
+and this will work even if it's not conjugate gradients.  
+(could also do simplex optimization?)

@@ -19,9 +19,29 @@ st = std(dx, [], 2) + std(dy, [], 2);
 
 % ignore all centroids that don't move
 % .. or move too much. 
-cmask = (sx > median(sx(sx > 0))/8) .* (st < 10); 
-cmask = cmask>0;
-disp(['number of active centroids: ' num2str(sum(cmask))]); 
+cmaskr = (sx > median(sx(sx > 0))/8) .* (st < 10); 
+cmaskr = cmaskr>0;
+hold on
+plot(cmaskr * 1e7, 'r')
+load('../data/calibration_forward.mat', 'cmask'); 
+cmask = cmask(1:1100); 
+plot(cmask * 1e7, 'k')
+legend('summed dx/dt and dy/dt', 'new cmask', 'old cmask'); 
+disp(['number of active centroids: ' num2str(sum(cmaskr))]);
+answer = input('Update cmask? (1 / 0): '); 
+if answer == 1
+	cmask = cmaskr; 
+else
+	% load in cmask from file -- to keep the other files 
+	% (geneopts) valid.
+	load('../data/calibration_forward.mat', 'cmask'); 
+	cmask = cmask(1:1100); 
+	% need to zero all noisy data anyway, so it doesn't slip into cforward. 
+	cmaskrr = repmat(cmaskr, 1, size(x, 2)); 
+	x = x .* cmaskrr; 
+	y = y .* cmaskrr; 
+	clear cmaskrr; 
+end
 x = x(cmask, :); 
 y = y(cmask, :); 
 mx = mean(x, 2); 
@@ -58,12 +78,14 @@ pred = A' * C;
 
 err = v' - pred; 
 
-% SVD yields the same coefficient matrix. 
-% [U,S,V] = svd(A', 0); 
-% C2 = V * (S^-1) * U' * v'; 
-% 
-% pred2 = A' * C2; 
-% err2 = v' - pred2; 
+if 1
+	% SVD yields the same coefficient matrix. 
+	[U,S,V] = svd(A', 0); 
+	C2 = V * (S^-1) * U' * v'; 
+
+	pred2 = A' * C2; 
+	err2 = v' - pred2; 
+end
 
 figure; 
 subplot(1,3,1); 
@@ -120,7 +142,7 @@ title('mean weight of C (fwd trans mtx) * 1e11 per centroid');
 subplot(1,2,2)
 Cstd = std(dx, [], 2) + std(dy, [], 2); 
 [q, indx] = sort(Cstd); 
-scatter(mx(indx), -my(indx), abs(q * 500), colors, 'filled'); 
+scatter(mx(indx), -my(indx), abs(q * 500 + 0.1), colors, 'filled'); 
 title('std(dx) + std(dy) for all time per centroid'); 
 Cforward = C; 
 cmask2 = zeros(3000, 1); 
@@ -128,5 +150,5 @@ cmask2(1:1100) = cmask;
 cmask = cmask2>0; 
 answer = input('Save calibration_forward.mat? (1 / 0): '); 
 if answer == 1
-	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my');
+	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my', 'cmaskr');
 end
