@@ -88,4 +88,27 @@ SNR at this power level was very good (though I could have tweaked the GDD a lit
 Green retrobeads are nearly as good -- though my test slide has a much thinner layer than the 1um PS beads. 
 They started to bleach (?) after about 10k frames.  Which is plenty for optimization! 
 
-Got some example images from the levelling scope -- will need a custom GUI for aligning the window.  I'm thinking actual = green; refrence = magenta.  
+Got some example images from the levelling scope -- will need a custom GUI for aligning the window.  I'm thinking actual = green; reference = magenta.  
+
+August 25 2021
+
+Well, the leveling turned out to be simple -- no custom GUI was required!  You can see the the reflection off the cranial window & center it with just the camera image. 
+
+Need to make some notes on the things I've been doing. 
+
+1 -- changed the genetic optimization to run multiple times during one file recording.  Typically, I've run the optimization for 20k samples, ten times through, with temperature varying from 0.006 to 0.0015.  
+This doesn't quite asymptote, but it definitely corrects the wavefront well. 
+Based on these recordings, I take the difference in wavefront centroids from the 'best wavefront'
+(itself a median of the best 400, as quantified by image brightness)
+These deltas are decomposed via SVD.  The resulting V matrix is orthonormal and sorted.  The columns of V are then used as delta basis vectors for adjusting the 'best' or flat wavefront. 
+Adjustment is manual, through ten sliders in the shwfs GUI.  Range of the sliders is dictated by 8x the standar deviation of the U*S columns (e.g. what V' is multiplied by..)
+
+In experimentation today, this modification of the desired wavefront only very slightly improved image quality, maybe 2-5%, when looking at Helen / Filip's rats.  
+The AO calibration was done with the 1um NH2 terminated polystyrene beads, fluorescein color (& dye, probably).  These don't seem to bleach at all, when stimulated with 1% power at 960nm.  
+
+The idea was to restrict optimization along the same dimensions that the GA moved in order to improve in-vivo brightness and contrast.  
+From examination of the V' projected wavefront data, these trajectories are relatively smooth, and don't frequently cross the origin, so it seems plausible that manual line-search in these dimensions would be OK.  
+
+But, not so much ... the calibration is good, image quality is fine, but improvements are not large like desired (>= 2x).  
+
+Still, these jf669 mice are great as they bleach very slowly, and are good for AO experimentation. 
