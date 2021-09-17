@@ -91,7 +91,7 @@ They started to bleach (?) after about 10k frames.  Which is plenty for optimiza
 Got some example images from the levelling scope -- will need a custom GUI for aligning the window.  I'm thinking actual = green; refrence = magenta.  
 
 August 27 2021
-Gree latex retrobeads do not seem to bleach too quickly!  That's good!
+Green latex retrobeads do not seem to bleach too quickly!  That's good!
 
 Today experimented with SVD of the calibration matrix. 
 It looks OK... 

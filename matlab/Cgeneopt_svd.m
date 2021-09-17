@@ -27,7 +27,7 @@
 
 load('../data/calibration_forward.mat'); % forward, mx, my
 % load('../data/calibration_flat.mat'); % calib
-fname = '960nm_PSbeads_long4';
+fname = '1080nm_orangePSbeads_long1';
 load(['../rundata/DMoptimization_' fname '.mat']); 
 nc = numel(mx); 
 
@@ -78,7 +78,6 @@ plot(pred)
 
 % % try SVD implicitly weighted based on GA optim. 
 [U, S, V] = svd(wf, 'econ'); 
-wf = double([(x-mx)' (y-my)']);
 for i = 1:20
 	vx = V(1:nc, i); 
 	vy = V(nc+1:2*nc, i); 
@@ -124,8 +123,7 @@ plot(stdK(1:20));
 % allow scaling by +-1.5 std, except for the first component, which = 2nd
 svd_scl = stdK(1:10) * 8.0; 
 svd_scl(1) = svd_scl(2); 
-
-savefname = '960nm_PSbeads_long4';
+% --------
 save(['../data/calibration_' fname '_geneopt.mat'], ...
 'Best_DMcommand','genecalib','svd_wfs_x','svd_wfs_y','svd_scl'); 
 

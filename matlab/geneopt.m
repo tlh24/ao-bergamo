@@ -1,9 +1,9 @@
 % udpr = dsp.UDPReceiver('LocalIPPort', 31313,...
 % 	'MessageDataType','double'); 
-
+tic; 
 N = 10e3; 
 NN = N*10;
-bleach_correct = 12000; 
+bleach_correct = 7000; 
 
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
 dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
@@ -14,6 +14,7 @@ save_dmcommand = single(zeros(NN, 97));
 save_sumstd = single(zeros(NN, 12)); 
 save_wfs_dx = single(zeros(NN, sum(cmask)));  
 save_wfs_dy = single(zeros(NN, sum(cmask))); 
+save_time = single(zeros(NN, 12)); 
 
 [dmx, dmy] = dm_actuator_to_xy();
 dmangle = angle([dmx + 1i*dmy]); 
@@ -28,7 +29,7 @@ dmctrl.Data = single(DMcommand);
 % end
 
 temperature = 0.01; 
-starttemp = 0.005; % start from zero DM command: 0.005
+starttemp = 0.007; % start from zero DM command: 0.005
 endtemp = 0.0015; 
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
@@ -36,8 +37,7 @@ k = 1;
 load('../data/calibration_960nm_PSbeads_long4_geneopt.mat', ...
 	'Best_DMcommand'); 
 
-sock = tcpip('0.0.0.0', 31313, 'NetworkRole', 'server');
-sock.InputBufferSize = 512*513; 
+sock = tcpip('0.0.0.0', 18080, 'NetworkRole', 'server');
 disp('ok go.'); 
 fopen(sock); % waits for a connection 
 datarx = fread(sock, 3, 'double');
@@ -46,7 +46,7 @@ while k < NN
 	% periodically reset the algorithm, 
 	% to get new draws from the optimization distro. 
 	if mod(k, N) == 1
-		if 1
+		if 0
 			DMcommand = Best_DMcommand'; 
 		else
 			DMcommand = zeros(97, 1); 
@@ -96,7 +96,7 @@ while k < NN
 % 		datarx = udpr(); 
 % 	end
 	dmctrl.Data = single(DMcommandP); 
-	% C++ control program drive the mirrors. 
+	% C++ control program drives the mirror. 
 
 	framen = 0; 
 	sumstd = 0; 
@@ -113,6 +113,7 @@ while k < NN
 % 			frame = single(reshape(frame, 256, 256)); 
 % 			frame = (frame / 255.0) * (framemax-framemin) + framemin; 
 		save_sumstd(k, framen+1) = datarx(1); 
+		save_time(k, framen+1) = toc; 
 		if framen > 6
 			sumstd = sumstd + datarx(1); 
 % 				sumframe = sumframe + frame; 
@@ -162,7 +163,7 @@ while k < NN
 	k = k + 1; 
 end
 	
-fname = ['../rundata/DMoptimization_960nm_PSbeads_long5.mat']
+fname = ['../rundata/DMoptimization_1080nm_orangePSbeads_long1.mat']
 save(fname, '-v7.3', 'save_*');
 
 fclose(sock); 
