@@ -112,3 +112,10 @@ From examination of the V' projected wavefront data, these trajectories are rela
 But, not so much ... the calibration is good, image quality is fine, but improvements are not large like desired (>= 2x).  
 
 Still, these jf669 mice are great as they bleach very slowly, and are good for AO experimentation. 
+
+Sept 23 2021
+
+SLAP1, KAspar, Figure 1, much better than my optical schematic (because it's simpler?)
+https://www.nature.com/articles/s41592-019-0493-9/figures/1
+SLAP records spines at 1016Hz
+looks like a good set of references too. 
