@@ -1,19 +1,20 @@
 % udpr = dsp.UDPReceiver('LocalIPPort', 31313,...
 % 	'MessageDataType','double'); 
-
-N = 20e3; 
-NN = N*10;
-bleach_correct = 12000; 
+tic; 
+N = 15e3; 
+NN = N*1;
+bleach_correct = 5000; 
 
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
 dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
 
-load('../data/calibration_forward.mat', 'cmask'); 
+load('../data/calibration_forward.mat', 'cmask', 'Cforward'); 
 % save_frames = single(zeros(N, 256, 256)); % just to be double sure. 
 save_dmcommand = single(zeros(NN, 97));
 save_sumstd = single(zeros(NN, 12)); 
 save_wfs_dx = single(zeros(NN, sum(cmask)));  
 save_wfs_dy = single(zeros(NN, sum(cmask))); 
+save_time = single(zeros(NN, 12)); 
 
 [dmx, dmy] = dm_actuator_to_xy();
 dmangle = angle([dmx + 1i*dmy]); 
@@ -28,13 +29,15 @@ dmctrl.Data = single(DMcommand);
 % end
 
 temperature = 0.01; 
-starttemp = 0.006; % start from zero DM command: 0.005
-endtemp = 0.0015; 
+starttemp = 0.007; % start from zero DM command: 0.005
+endtemp = 0.002; 
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
 
-sock = tcpip('0.0.0.0', 31313, 'NetworkRole', 'server');
-sock.InputBufferSize = 512*513; 
+load('../data/calibration_960nm_PSbeads_long4_geneopt.mat', ...
+	'Best_DMcommand'); 
+
+sock = tcpip('0.0.0.0', 18080, 'NetworkRole', 'server');
 disp('ok go.'); 
 fopen(sock); % waits for a connection 
 datarx = fread(sock, 3, 'double');
@@ -42,12 +45,18 @@ datarx = fread(sock, 3, 'double');
 while k < NN
 	% periodically reset the algorithm, 
 	% to get new draws from the optimization distro. 
-	if mod(k, N) == 1
-		DMcommand = zeros(97, 1); 
-		DMcommandHist = repmat(DMcommand, 1, 100); 
-		DMcommandStd = zeros(1, 100);
-		DMcommandK = zeros(1, 100); 
-		datarx = fread(sock, 3, 'double');
+	if 0
+		if mod(k, N) == 1
+			if 1
+				DMcommand = Best_DMcommand'; 
+			else
+				DMcommand = zeros(97, 1); 
+			end
+			DMcommandHist = repmat(DMcommand, 1, 100); 
+			DMcommandStd = zeros(1, 100);
+			DMcommandK = zeros(1, 100); 
+			datarx = fread(sock, 3, 'double');
+		end
 	end
 	
 	temperature = temperatures(mod(k-1,N)+1); 
@@ -89,7 +98,7 @@ while k < NN
 % 		datarx = udpr(); 
 % 	end
 	dmctrl.Data = single(DMcommandP); 
-	% C++ control program drive the mirrors. 
+	% C++ control program drives the mirror. 
 
 	framen = 0; 
 	sumstd = 0; 
@@ -106,6 +115,7 @@ while k < NN
 % 			frame = single(reshape(frame, 256, 256)); 
 % 			frame = (frame / 255.0) * (framemax-framemin) + framemin; 
 		save_sumstd(k, framen+1) = datarx(1); 
+		save_time(k, framen+1) = toc; 
 		if framen > 6
 			sumstd = sumstd + datarx(1); 
 % 				sumframe = sumframe + frame; 
@@ -137,8 +147,8 @@ while k < NN
 		if mean(k-DMcommandK) > 450
 			bleach_correct = bleach_correct * 0.99461 
 		end
-		if mean(k-DMcommandK) < 110 && k > 1000
-			bleach_correct = bleach_correct * 1.00237
+		if mean(k-DMcommandK) < 100 && k > 1000
+			bleach_correct = bleach_correct * 1.00137
 		end
 	end
 	agedecay = 1-((k - DMcommandK) / bleach_correct); 
@@ -155,7 +165,7 @@ while k < NN
 	k = k + 1; 
 end
 	
-fname = ['../rundata/DMoptimization_960nm_PSbeads_long5.mat']
+fname = ['../rundata/DMoptimization_960nm_mouse6.mat']
 save(fname, '-v7.3', 'save_*');
 
 fclose(sock); 

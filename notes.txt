@@ -113,9 +113,25 @@ But, not so much ... the calibration is good, image quality is fine, but improve
 
 Still, these jf669 mice are great as they bleach very slowly, and are good for AO experimentation. 
 
+August 27 2021
+Green latex retrobeads do not seem to bleach too quickly!  That's good!
+
+Today experimented with SVD of the calibration matrix. 
+It looks OK... 
+for optimization, suggest we take the components from that, regress them to the associated DM actuator values (through the forward matrix), 
+and then search along these directions for online wavefront optimization. 
+
+Also of note: experimented with tweaking the SVD components today while trying to bleach the retrobeads.  The middle setting (e.g. no modification) was consistently the best in terms of brightness for the retrobeads image. 
+This adds more evidence to the idea that in order to improve image quality in vivo, 
+we need to run the optimization in vivo.  
+A corrolary question is: how can we optimize the optimizer? 
+Making it operate in a basis set different than the raw actuator values makes sense ... it may also be the case that the function is convex (?) which means that variables can be optimized serially, 
+and this will work even if it's not conjugate gradients.  
+(could also do simplex optimization?)
+
 Sept 23 2021
 
-SLAP1, KAspar, Figure 1, much better than my optical schematic (because it's simpler?)
+SLAP1, Kaspar, Figure 1, much better than my optical schematic (because it's simpler?)
 https://www.nature.com/articles/s41592-019-0493-9/figures/1
 SLAP records spines at 1016Hz
 looks like a good set of references too. 

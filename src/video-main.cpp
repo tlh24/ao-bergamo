@@ -574,8 +574,8 @@ void* video_thread(void*){
 				g_framerate_label.set(1.0 / (start - lastFrameTime));
 				g_dataSize_label.set((float)centroidVec->nstored()); 
 				lastFrameTime = start; 
-				if(g_nFrames%5 == 4){
-					if(g_record_data.get() && centroidVec->nstored() < 250000){ 
+				if(g_nFrames%7 == 6){
+					if(g_record_data.get() && centroidVec->nstored() < 1250000){ 
 						for(int i=0; i<g_nCentroids && i<1100; i++){
 							centroidVec->m_stor[i] = g_centroids[i][0]; 
 							centroidVec->m_stor2[i] = g_centroids[i][1]; 
