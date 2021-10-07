@@ -1,14 +1,14 @@
 % udpr = dsp.UDPReceiver('LocalIPPort', 31313,...
 % 	'MessageDataType','double'); 
 tic; 
-N = 10e3; 
-NN = N*10;
-bleach_correct = 7000; 
+N = 15e3; 
+NN = N*1;
+bleach_correct = 5000; 
 
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
 dmctrl = memmapfile('../shared_dmctrl.dat','Format','single','Offset',0,'Repeat',97, 'Writable',true);
 
-load('../data/calibration_forward.mat', 'cmask'); 
+load('../data/calibration_forward.mat', 'cmask', 'Cforward'); 
 % save_frames = single(zeros(N, 256, 256)); % just to be double sure. 
 save_dmcommand = single(zeros(NN, 97));
 save_sumstd = single(zeros(NN, 12)); 
@@ -30,7 +30,7 @@ dmctrl.Data = single(DMcommand);
 
 temperature = 0.01; 
 starttemp = 0.007; % start from zero DM command: 0.005
-endtemp = 0.0015; 
+endtemp = 0.002; 
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
 
@@ -45,16 +45,18 @@ datarx = fread(sock, 3, 'double');
 while k < NN
 	% periodically reset the algorithm, 
 	% to get new draws from the optimization distro. 
-	if mod(k, N) == 1
-		if 0
-			DMcommand = Best_DMcommand'; 
-		else
-			DMcommand = zeros(97, 1); 
+	if 0
+		if mod(k, N) == 1
+			if 1
+				DMcommand = Best_DMcommand'; 
+			else
+				DMcommand = zeros(97, 1); 
+			end
+			DMcommandHist = repmat(DMcommand, 1, 100); 
+			DMcommandStd = zeros(1, 100);
+			DMcommandK = zeros(1, 100); 
+			datarx = fread(sock, 3, 'double');
 		end
-		DMcommandHist = repmat(DMcommand, 1, 100); 
-		DMcommandStd = zeros(1, 100);
-		DMcommandK = zeros(1, 100); 
-		datarx = fread(sock, 3, 'double');
 	end
 	
 	temperature = temperatures(mod(k-1,N)+1); 
@@ -145,8 +147,8 @@ while k < NN
 		if mean(k-DMcommandK) > 450
 			bleach_correct = bleach_correct * 0.99461 
 		end
-		if mean(k-DMcommandK) < 110 && k > 1000
-			bleach_correct = bleach_correct * 1.00237
+		if mean(k-DMcommandK) < 100 && k > 1000
+			bleach_correct = bleach_correct * 1.00137
 		end
 	end
 	agedecay = 1-((k - DMcommandK) / bleach_correct); 
@@ -163,7 +165,7 @@ while k < NN
 	k = k + 1; 
 end
 	
-fname = ['../rundata/DMoptimization_1080nm_orangePSbeads_long1.mat']
+fname = ['../rundata/DMoptimization_960nm_mouse6.mat']
 save(fname, '-v7.3', 'save_*');
 
 fclose(sock); 

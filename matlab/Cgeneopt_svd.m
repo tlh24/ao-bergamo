@@ -27,11 +27,9 @@
 
 load('../data/calibration_forward.mat'); % forward, mx, my
 % load('../data/calibration_flat.mat'); % calib
-fname = '1080nm_orangePSbeads_long1';
+fname = '960nm_mouse4';
 load(['../rundata/DMoptimization_' fname '.mat']); 
 nc = numel(mx); 
-
-
 
 % 
 % figure; 
@@ -78,26 +76,11 @@ plot(pred)
 
 % % try SVD implicitly weighted based on GA optim. 
 [U, S, V] = svd(wf, 'econ'); 
-for i = 1:20
+for i = 20:-1:1
 	vx = V(1:nc, i); 
 	vy = V(nc+1:2*nc, i); 
-	figure;
-	subplot(1,2,1);
-	red = max(min((vx + 0.2)/0.4, 1.0), 0.0); 
-	blue = max(min((0.2 - vx)/0.4, 1.0), 0.0); 
-	scatter(mx, my, 750*ones(nc,1), [red zeros(nc,1) blue], 'filled');
-	axis([200 1700 200 1700]); 
-	axis square; 
-	set(gca,'Color','k')
-	title(['dx for GA svd component ' num2str(i)])
-	subplot(1,2,2);
-	red = max(min((vy + 0.2)/0.4, 1.0), 0.0); 
-	blue = max(min((0.2 - vy)/0.4, 1.0), 0.0); 
-	scatter(mx, my, 750*ones(nc,1), [red zeros(nc,1) blue], 'filled');
-	axis([200 1700 200 1700]); 
-	axis square; 
-	set(gca,'Color','k')
-	title(['dy for GA svd component ' num2str(i)])
+	wavefront_plot_circles(mx, my, vx, vy, ...
+		['GA svd component ' num2str(i)]); 
 	set(gcf, 'Position',  [100, 100, 1500, 750])
 end
 
@@ -115,10 +98,12 @@ K = U*S;
 meanK = mean(K, 1); 
 stdK = std(K, 1);
 figure; 
-subplot(1,2,1);
+subplot(1,3,1);
 plot(meanK(1:20));
-subplot(1,2,2);
+title('U*S, mean, for scaling wavefront'); 
+subplot(1,3,2);
 plot(stdK(1:20));
+title('U*S, std, for scaling wavefront'); 
 
 % allow scaling by +-1.5 std, except for the first component, which = 2nd
 svd_scl = stdK(1:10) * 8.0; 
@@ -127,4 +112,14 @@ svd_scl(1) = svd_scl(2);
 save(['../data/calibration_' fname '_geneopt.mat'], ...
 'Best_DMcommand','genecalib','svd_wfs_x','svd_wfs_y','svd_scl'); 
 
+subplot(1,3,3);
 scatter3(best_wfs_x, best_wfs_y, coef(1:nc)/1e5, 'o'); 
+title('coefficients of intensity regression vs. wf centroid'); 
+
+% look at the deviation of this wavefront vs original.
+genecalib_orig = genecalib; 
+load('../data/calibration_960nm_PSbeads_long4_geneopt.mat');
+genecalib_long4 = genecalib;
+wavefront_plot_circles(best_wfs_x, best_wfs_y, ...
+	genecalib_orig(:,1) - genecalib_long4(:,1), ...
+	genecalib(:,2) - genecalib_long4(:,2),'update')

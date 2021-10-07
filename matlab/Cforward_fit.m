@@ -150,5 +150,5 @@ cmask2(1:1100) = cmask;
 cmask = cmask2>0; 
 answer = input('Save calibration_forward.mat? (1 / 0): '); 
 if answer == 1
-	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my', 'cmaskr');
+	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my', 'cmaskr','S','V');
 end
