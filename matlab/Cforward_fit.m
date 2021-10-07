@@ -49,6 +49,8 @@ my = mean(y, 2);
 dx = x - mx; 
 dy = y - my;
 
+% save('rundata/centroids_cleaned.mat', '-v7.3', 'mx','my','dx','dy','cmask')
+
 nc = size(x, 1); 
 nt = size(x, 2); 
 A = [dx; dy; ones(1,nt)]; 
