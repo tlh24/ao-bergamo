@@ -574,7 +574,7 @@ void* video_thread(void*){
 				g_framerate_label.set(1.0 / (start - lastFrameTime));
 				g_dataSize_label.set((float)centroidVec->nstored()); 
 				lastFrameTime = start; 
-				if(g_nFrames%7 == 6){
+				if(g_nFrames%7 == 6 || 1){
 					if(g_record_data.get() && centroidVec->nstored() < 1250000){ 
 						for(int i=0; i<g_nCentroids && i<1100; i++){
 							centroidVec->m_stor[i] = g_centroids[i][0]; 
@@ -589,7 +589,7 @@ void* video_thread(void*){
 					for(int i=0; i<97; i++){
 						dm_data[i] = 0.f;
 					}
-					if(g_test_dm.get()){
+					if(centroidVec->nstored()%7 == 6 && g_test_dm.get()){
 						//generate a new dm command signal. 
 						dm_rand_stim(dm_data); 
 						memcpy(mmap_dmctrl, dm_data, 97*4); 
@@ -647,7 +647,7 @@ void* video_thread(void*){
 				vector<Serialize*> g_objs; 
 				g_objs.push_back(centroidVec); 
 				g_objs.push_back(dmVec); 
-				string fname = "rundata/centroids.mat";
+				string fname = "rundata/mod7centroids.mat";
 				writeMatlab(g_objs, (char *)fname.c_str(), false);
 				g_write_data = false;
 				g_write_last_size = centroidVec->nstored();
