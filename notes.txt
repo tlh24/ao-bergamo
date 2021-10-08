@@ -129,8 +129,15 @@ Making it operate in a basis set different than the raw actuator values makes se
 and this will work even if it's not conjugate gradients.  
 (could also do simplex optimization?)
 
+Sept 23 2021
+
+SLAP1, Kaspar, Figure 1, much better than my optical schematic (because it's simpler?)
+https://www.nature.com/articles/s41592-019-0493-9/figures/1
+SLAP records spines at 1016Hz
+looks like a good set of references too. 
 
 October 8 2021
 The DM most definitely responds within one SHWFS frame.  No problem!
 In fact, I think there was a bug in the control code that was slowing things down... 
 For speed purposes, might want to reconsider the pipeline / move the optimization to the scanimage computer and simply remote control the DM? 
+
