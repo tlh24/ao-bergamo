@@ -2,6 +2,10 @@ load ../rundata/centroids.mat
 x = double(x); 
 y = double(y); 
 v = double(v); 
+n = min(384000, size(x,2)); % because my laptop has limited memory. 
+x = x(:, 1:n); 
+y = y(:, 1:n); 
+v = v(:, 1:n);
 dx = diff(x, 1, 2); 
 dy = diff(y, 1, 2); 
 
@@ -49,8 +53,6 @@ my = mean(y, 2);
 dx = x - mx; 
 dy = y - my;
 
-% save('rundata/centroids_cleaned.mat', '-v7.3', 'mx','my','dx','dy','cmask')
-
 nc = size(x, 1); 
 nt = size(x, 2); 
 A = [dx; dy; ones(1,nt)]; 
@@ -64,6 +66,7 @@ else
 end
 A = A(:, tmask); 
 v = v(:, tmask); 
+
 amx = amx(tmask); 
 % figure; 
 % plot(amx)
@@ -76,7 +79,9 @@ title('std of dx and dy for all time');
 xlabel('valid centroid (repeats once)'); 
 
 C = A'\v';  
-pred = A' * C; 
+pred = A' * C;  
+
+save('../rundata/centroids_cleaned.mat','-v7.3','A','v','cmask')
 
 err = v' - pred; 
 
@@ -150,7 +155,17 @@ Cforward = C;
 cmask2 = zeros(3000, 1); 
 cmask2(1:1100) = cmask; 
 cmask = cmask2>0; 
+VS = V*S; % multiply by the SVD values.
+VS = VS / 500; % scale VS by +- 1.0 to drive the synthetic wavefront. 
+VS = VS(:, 1:97); % we don't care about higher mechanical modes (no degrees of freedom in the system)
 answer = input('Save calibration_forward.mat? (1 / 0): '); 
 if answer == 1
-	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my', 'cmaskr','S','V');
+	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my', 'cmaskr','VS');
+end
+
+answer = input('plot the SVD modes? (1 / 0)');
+if answer == 1
+    for j = 40:-1:1
+        wavefront_plot_circles(mx, my, V(1:nc, j), V(nc+1:2*nc, j), ['svd wavefront ' num2str(j)])
+    end
 end
