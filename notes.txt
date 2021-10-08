@@ -128,3 +128,10 @@ A corrolary question is: how can we optimize the optimizer?
 Making it operate in a basis set different than the raw actuator values makes sense ... it may also be the case that the function is convex (?) which means that variables can be optimized serially, 
 and this will work even if it's not conjugate gradients.  
 (could also do simplex optimization?)
+
+Sept 23 2021
+
+SLAP1, Kaspar, Figure 1, much better than my optical schematic (because it's simpler?)
+https://www.nature.com/articles/s41592-019-0493-9/figures/1
+SLAP records spines at 1016Hz
+looks like a good set of references too. 
