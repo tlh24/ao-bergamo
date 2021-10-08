@@ -88,13 +88,13 @@ v = torch.from_numpy(v)
 f.close()
 
 analyzer = nn.Sequential(
-    EqualLinear(ncentroids, 1024), 
-    nn.LeakyReLU(0.2), 
-    EqualLinear(1024, 512), 
-    nn.LeakyReLU(0.2), 
-    EqualLinear(512, 256), 
-    nn.LeakyReLU(0.2), 
-    EqualLinear(256, 97)).cuda(device)
+	EqualLinear(ncentroids, 1024), 
+	nn.LeakyReLU(0.2), 
+	EqualLinear(1024, 512), 
+	nn.LeakyReLU(0.2), 
+	EqualLinear(512, 256), 
+	nn.LeakyReLU(0.2), 
+	EqualLinear(256, 97)).cuda(device)
 
 optimizer = optim.Adam(analyzer.parameters(), lr=0.001, betas=(0.0, 0.99))
 lossfunc = torch.nn.SmoothL1Loss() # mean reduction
@@ -104,23 +104,23 @@ losses = np.zeros((2,niters))
 
 
 for k in range(niters):
-    r = torch.randint(0, nsamp, (batch_size,)) # on the cpu
-    x = A[r, :].cuda(device) # copy to gpu
-    y = v[r, :].cuda(device)
-    x.grad = None; 
-    y.grad = None; 
-    y = y / 0.15 # scale to +- 1.0
-    analyzer.zero_grad()
-    predict = analyzer(x)
-    loss = lossfunc(y, predict)
-    loss.backward()
-    optimizer.step()
-    slowloss = 0.99*slowloss + 0.01 * loss.detach()
-    if k % 20 == 0 : 
-        print(f'{k} loss: {loss}; slowloss {slowloss}')
-        gc.collect()
-    losses[0,k] = loss
-    losses[1,k] = slowloss
+	r = torch.randint(0, nsamp, (batch_size,)) # on the cpu
+	x = A[r, :].cuda(device) # copy to gpu
+	y = v[r, :].cuda(device)
+	x.grad = None; 
+	y.grad = None; 
+	y = y / 0.15 # scale to +- 1.0
+	analyzer.zero_grad()
+	predict = analyzer(x)
+	loss = lossfunc(y, predict)
+	loss.backward()
+	optimizer.step()
+	slowloss = 0.99*slowloss + 0.01 * loss.detach()
+	if k % 20 == 0 : 
+		print(f'{k} loss: {loss}; slowloss {slowloss}')
+		gc.collect()
+	losses[0,k] = loss
+	losses[1,k] = slowloss
 
 
 # save the results in a file! 

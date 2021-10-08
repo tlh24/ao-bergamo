@@ -537,6 +537,7 @@ void* video_thread(void*){
 			uint8_t *pImageBuffer = (uint8_t *) ptrGrabResult->GetBuffer();
 
 			if(pImageBuffer){
+				// copy the data for the openGL thread to display. 
 				memcpy(g_data[0], pImageBuffer, g_w*g_h); 
 				g_copy[0] = 1; 
 			}
@@ -574,7 +575,7 @@ void* video_thread(void*){
 				g_framerate_label.set(1.0 / (start - lastFrameTime));
 				g_dataSize_label.set((float)centroidVec->nstored()); 
 				lastFrameTime = start; 
-				if(g_nFrames%7 == 6 || 1){
+				if(g_nFrames%5 == 4){
 					if(g_record_data.get() && centroidVec->nstored() < 1250000){ 
 						for(int i=0; i<g_nCentroids && i<1100; i++){
 							centroidVec->m_stor[i] = g_centroids[i][0]; 
@@ -586,44 +587,46 @@ void* video_thread(void*){
 						centroidVec->store(); 
 						dmVec->store(); 
 					}
-					for(int i=0; i<97; i++){
-						dm_data[i] = 0.f;
-					}
-					if(centroidVec->nstored()%7 == 6 && g_test_dm.get()){
+				}
+				for(int i=0; i<97; i++){
+					dm_data[i] = 0.f;
+				}
+				if(g_test_dm.get()){
+					if(g_nFrames%5 == 4){
 						//generate a new dm command signal. 
 						dm_rand_stim(dm_data); 
 						memcpy(mmap_dmctrl, dm_data, 97*4); 
+					}
+				}else{
+					if(g_zero_dm.get()){
+						for(int j=0; j<97; j++)
+							dm_data[j] = 0.0; 
+						memcpy(mmap_dmctrl, dm_data, 97*4); 
 					}else{
-						if(g_zero_dm.get()){
-							for(int j=0; j<97; j++)
-								dm_data[j] = 0.0; 
+						if(g_control_dm.get() && g_dmcontrolen){
+							dm_control_run(mmap_zernike, g_geneopt_active, dm_data, g_svd_uival); 
+							//echo command to matlab for visualization.
 							memcpy(mmap_dmctrl, dm_data, 97*4); 
 						}else{
-							if(g_control_dm.get() && g_dmcontrolen){
-								dm_control_run(mmap_zernike, g_geneopt_active, dm_data, g_svd_uival); 
-								//echo command to matlab for visualization.
-								memcpy(mmap_dmctrl, dm_data, 97*4); 
-							}else{
-								memcpy(dm_data, mmap_dmctrl, 97*4); 
-							}
+							memcpy(dm_data, mmap_dmctrl, 97*4); 
 						}
 					}
-					if(0){
-						for(int i=0; i<97; i++){
-							dm_data[i] = 0.f;
-						}
-						if(g_actuator > 96) g_actuator = 96; 
-						if(g_actuator < 0) g_actuator = 0; 
-						if(g_dm_counter & 0x1){
-							dm_data[g_actuator] = -0.10; 
-						}else{
-							dm_data[g_actuator] = 0.10; 
-						}
-						g_dm_counter++; 
-					}
-					dm_remove_ptt(dm_data); 
-					dm_semaphore->notify(); 
 				}
+				if(0){
+					for(int i=0; i<97; i++){
+						dm_data[i] = 0.f;
+					}
+					if(g_actuator > 96) g_actuator = 96; 
+					if(g_actuator < 0) g_actuator = 0; 
+					if(g_dm_counter & 0x1){
+						dm_data[g_actuator] = -0.10; 
+					}else{
+						dm_data[g_actuator] = 0.10; 
+					}
+					g_dm_counter++; 
+				}
+				dm_remove_ptt(dm_data); 
+				dm_semaphore->notify(); 
 				memcpy(mmap_centroids, g_centroids, MAX_LENSLETS*2*4); 
 			}
 			
@@ -647,7 +650,7 @@ void* video_thread(void*){
 				vector<Serialize*> g_objs; 
 				g_objs.push_back(centroidVec); 
 				g_objs.push_back(dmVec); 
-				string fname = "rundata/mod7centroids.mat";
+				string fname = "rundata/centroids.mat";
 				writeMatlab(g_objs, (char *)fname.c_str(), false);
 				g_write_data = false;
 				g_write_last_size = centroidVec->nstored();
