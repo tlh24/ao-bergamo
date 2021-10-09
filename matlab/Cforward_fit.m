@@ -34,8 +34,6 @@ if answer == 1
 else
 	% load in cmask from file -- to keep the other files 
 	% (geneopts) valid.
-	load('../data/calibration_forward.mat', 'cmask'); 
-	cmask = cmask(1:1100); 
 	% need to zero all noisy data anyway, so it doesn't slip into cforward. 
 	cmaskrr = repmat(cmaskr, 1, size(x, 2)); 
 	x = x .* cmaskrr; 
@@ -49,7 +47,7 @@ my = mean(y, 2);
 dx = x - mx; 
 dy = y - my;
 
-% save('rundata/centroids_cleaned.mat', '-v7.3', 'mx','my','dx','dy','cmask')
+save('../rundata/centroids_cleaned.mat', '-v7.3', 'mx','my','dx','dy','cmask'); 
 
 nc = size(x, 1); 
 nt = size(x, 2); 
