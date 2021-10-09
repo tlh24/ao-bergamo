@@ -49,6 +49,8 @@ unsigned char g_cmask[3000];
 int g_activeCentroids = 0; 
 int g_nZernike = 0; 
 gsl_matrix* g_cforward = NULL; //forward transform from centroids to dm
+gsl_matrix* g_VS = NULL; //transform from SVD modes to centroid dx/dy
+// note: these need to be normalized VS = V*S / 500. 
 
 gsl_matrix* g_genecalib[geneopt_num]; //'system flat' as determined via genetic algos
 gsl_matrix* g_svd_wfs_x[geneopt_num]; // signular values found during DM geneopt
@@ -149,6 +151,9 @@ bool dm_control_init()
 		printf("could not load variable cmask from calibration_forward.mat\n"); 
 	}
 	res = read_matfile_variable(matfp, "data/calibration_forward.mat", "Cforward", g_activeCentroids*2 + 1, 97, &g_cforward); 
+    // read in the SVD-based modes. 
+    res = read_matfile_variable(matfp, "data/calibration_forward.mat", "VS", g_activeCentroids*2 + 1, 97, &g_VS); 
+    
 	Mat_Close(matfp);
 	if(!res) return res; 
 	
@@ -242,6 +247,37 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 		gsl_matrix_free(scl); 
 		gsl_matrix_free(wfx); 
 		gsl_matrix_free(wfy); 
+		gsl_matrix_free(tweakedflat); 
+    } else if(g_VS != NULL){
+        gsl_matrix* scl = gsl_matrix_alloc(97, 1); 
+		for(int i=0; i<97; i++){
+            double d = 0.0
+            if(i < 20){
+                d = svd_uival[i]; 
+            }
+			gsl_matrix_set(scl, i, 0, d); 
+            // note: VS is pre-scaled to accept input [-1..+1]
+		}
+		gsl_matrix* wf = gsl_matrix_alloc(g_activeCentroids*2+1, 1); 
+		for(int i=0; i<g_activeCentroids; i++){
+			gsl_matrix_set(wf, i, 0, 
+				gsl_matrix_get(g_genecalib[geneopt_active], i, 0)); 
+			gsl_matrix_set(wf, i+2, 0, 
+				gsl_matrix_get(g_genecalib[geneopt_active], i, 1)); 
+		}
+		gsl_matrix_set(wf, g_activeCentroids*2, 0, 1.0); 
+        gsl_blas_dgemm(CBNT, CBNT, 1.0, g_VS, scl, 1.0, wf); 
+		gsl_matrix* tweakedflat = gsl_matrix_alloc(g_activeCentroids, 2); 
+        // this is inefficient as we could just pass wf through cforward.
+		for(int i=0; i<g_activeCentroids; i++){
+			gsl_matrix_set(tweakedflat, i, 0, 
+					gsl_matrix_get(wf, i, 0)); 
+			gsl_matrix_set(tweakedflat, i, 1, 
+					gsl_matrix_get(wf, i*2, 0)); 
+		}
+		gsl_matrix_sub(g_dat, tweakedflat); // this is dx and dy, flat-compensated. output is on g_dat.
+		gsl_matrix_free(scl); 
+		gsl_matrix_free(wf);  
 		gsl_matrix_free(tweakedflat); 
 	} else {
 		gsl_matrix_sub(g_dat, g_genecalib[geneopt_active]); // this is dx and dy, flat-compensated. output is on g_dat.
