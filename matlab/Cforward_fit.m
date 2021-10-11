@@ -1,11 +1,11 @@
 load ../rundata/centroids.mat
-x = double(x); 
-y = double(y); 
-v = double(v); 
-n = min(384000, size(x,2)); % because my laptop has limited memory. 
-x = x(:, 1:n); 
-y = y(:, 1:n); 
-v = v(:, 1:n);
+% x = double(x); 
+% y = double(y); 
+% v = double(v); 
+% n = min(384000, size(x,2)); % because my laptop has limited memory. 
+% x = x(:, 1:n); 
+% y = y(:, 1:n); 
+% v = v(:, 1:n);
 dx = diff(x, 1, 2); 
 dy = diff(y, 1, 2); 
 

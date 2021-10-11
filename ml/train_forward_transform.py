@@ -77,15 +77,21 @@ class EqualLinear(nn.Module):
 
 device = torch.device('cuda:0')
 batch_size = 16 # 64 converges more slowly, obvi
+# batch_size = 32, after 50k steps validation loss is 0.000206
+# 16, validation loss is 0.000191
 niters = 500000
 
-f = h5py.File('../rundata/centroids_cleaned.mat')
+f = h5py.File('../rundata/centroids_cleaned.mat', 'r')
 A = f.get('A')[:]
 v = f.get('v')[:]
-A = torch.from_numpy(A) 
-v = torch.from_numpy(v)
+A = torch.from_numpy(A.astype(np.single)) 
+v = torch.from_numpy(v.astype(np.single))
 (nsamp, ncentroids) = A.shape;
 f.close()
+
+# layers: in, 1024, 512, 256, 97: validation loss 7e-5, 1.2e-4, 8.7e-5
+# layers: in, 1024, 1024 512, 256, 97: validation loss 1.3e-4
+# layers: in, 512, 256, 97: 1e-4
 
 analyzer = nn.Sequential(
 	EqualLinear(ncentroids, 1024), 
@@ -96,15 +102,15 @@ analyzer = nn.Sequential(
 	nn.LeakyReLU(0.2), 
 	EqualLinear(256, 97)).cuda(device)
 
-optimizer = optim.Adam(analyzer.parameters(), lr=0.001, betas=(0.0, 0.99))
+optimizer = optim.AdamW(analyzer.parameters(), lr=0.001, betas=(0.0, 0.99), weight_decay=1e-3)
 lossfunc = torch.nn.SmoothL1Loss() # mean reduction
 
 slowloss = 0.0
 losses = np.zeros((2,niters)) 
-
+nvalidate = 50000
 
 for k in range(niters):
-	r = torch.randint(0, nsamp, (batch_size,)) # on the cpu
+	r = torch.randint(nvalidate, nsamp, (batch_size,)) # on the cpu
 	x = A[r, :].cuda(device) # copy to gpu
 	y = v[r, :].cuda(device)
 	x.grad = None; 
@@ -116,13 +122,24 @@ for k in range(niters):
 	loss.backward()
 	optimizer.step()
 	slowloss = 0.99*slowloss + 0.01 * loss.detach()
-	if k % 20 == 0 : 
+	if k % 200 == 0 : 
 		print(f'{k} loss: {loss}; slowloss {slowloss}')
-		gc.collect()
 	losses[0,k] = loss
 	losses[1,k] = slowloss
 
+sumloss = 0.0
+with torch.no_grad():
+	for k in range(0, nvalidate, batch_size):
+		r = torch.arange(k, k+batch_size, 1, dtype=torch.int64)
+		x = A[r, :].cuda(device) # copy to gpu
+		y = v[r, :].cuda(device)
+		y = y / 0.15 # scale to +- 1.0
+		analyzer.zero_grad()
+		predict = analyzer(x)
+		sumloss = sumloss + lossfunc(y, predict)
 
+sumloss = sumloss / (nvalidate / batch_size)
+print(f'validation loss: {sumloss}')
 # save the results in a file! 
 #scipy.io.savemat('forward_nn.mat', mdict=
                  #{'l1': analyzer.)
