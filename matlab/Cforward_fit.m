@@ -161,10 +161,12 @@ end
 % also need to save for pytorch model fitting: 
 % note hard-coded flat calibration!! (Needs to be a hdf5 file, might as
 % well splice in here)
-load('../data/calibration_960nm_PSbeads_long4_geneopt.mat', 'genecalib')
+load('../data/calibration_960nm_PSbeads_long4_geneopt.mat', 'genecalib', 'Best_DMcommand')
 flatwf = ones(nc*2+1, 1); % last value is bias / 1
-flatwf(1:nc) = genecalib(:,1); 
-flatwf(nc+1:nc*2) = genecalib(:,2); 
+flatwf(1:nc) = genecalib(:,1) - mx; % let's hope the microscope optics haven't moved between these...
+flatwf(nc+1:nc*2) = genecalib(:,2) - my; 
+flatbad = abs(flatwf) > 10;
+flatwf(flatbad) = 0.0; 
 save('../rundata/centroids_cleaned.mat','-v7.3',...
 	'A','v','cmask','VS','flatwf')
 
