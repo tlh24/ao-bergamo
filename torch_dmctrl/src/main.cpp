@@ -11,10 +11,19 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_fit.h>
 
 #include <cnpy.h>
 #include "gettime.h"
 #include "sock.h"
+
+#define ALPAO 1
+#ifdef ALPAO
+// Alpao SDK Header: All types and class are in the ACS namespace
+#include "asdkDM.h"
+#endif
 
 const int64_t ncentroids = 1075;
 
@@ -87,12 +96,54 @@ void LoadStateDict(dmControlNet& module,
 #define CMD_SIZ 5120
 static float g_cmdt[CMD_SIZ]; 
 int g_controlSock = 0; //RX from matlab / ScanImage.
+bool g_die = false; 
 
 void my_handler(int s){
 	printf("Caught signal %d\n",s);
-	if(g_controlSock)
-		close_socket(g_controlSock); 
-	exit(1); 
+	g_die = true;  
+}
+
+void dm_actuator_to_xy(int act, double* x, double* y){
+	int starts[] = {0,5,12,21,32,43,54,65,76,85,92,  97};
+	int startsY[] = {-2,-3,-4,-5,-5,-5,-5,-5,-4,-3,-2}; 
+	int startsX[] = {5,4,3,2,1,0,-1,-2,-3,-4,-5}; 
+	if(act < 0 || act > 96) return; 
+	int i = 0; 
+	while(i<11 && starts[i+1] <= act){
+		i++; 
+	}
+	*x = (double)( startsX[i] ); 
+	*y = (double)( startsY[i] + act - starts[i] ); 
+}
+
+void dm_remove_ptt(double* dm_data){
+	// remove piston, tilt, and tip from the DM control signal.  
+	float piston = 0.f; 
+	for(int i=0; i<97; i++){
+		piston += dm_data[i]; 
+	}
+	piston /= 97.f; 
+	for(int i=0; i<97; i++){
+		dm_data[i] -= piston; 
+	}
+	double x[97]; //gsl routines are double prec
+	double y[97]; 
+	double dm[97]; 
+	for(int i=0; i<97; i++){
+		dm_actuator_to_xy(i, &(x[i]), &(y[i]));
+		dm[i] = dm_data[i]; 
+	}
+	// use X and Y to predict dm via linear regression
+	double cx, cov11, sumsq; 
+	gsl_fit_mul(x, 1, dm, 1, 97, &cx, &cov11, &sumsq); 
+	for(int i=0; i<97; i++){
+		dm[i] = dm[i] - x[i]*cx; 
+	}
+	double cy; 
+	gsl_fit_mul(y, 1, dm, 1, 97, &cy, &cov11, &sumsq); 
+	for(int i=0; i<97; i++){
+		dm_data[i] = dm[i] - y[i]*cy; 
+	}
 }
 	
 int main(int argc, const char* argv[]) {
@@ -128,10 +179,31 @@ int main(int argc, const char* argv[]) {
 	// std::cout << dmctrl << std::endl; 
 	// this should be ~= BestDMcommand.
 	// and indeed it looks ok (not perfect?)
+	
+#ifdef ALPAO
+	std::string serial = "AlpaoLib/BAX390"; 
+	// Load configuration file
+	acs::DM dm( serial.c_str() );
+
+	// Get the number of actuators
+	acs::UInt nbAct = (acs::UInt) dm.Get( "NbOfActuator" );
+
+	// Check errors
+	if ( !dm.Check() ){
+		std::cout << "deformable mirror is not responding" << std::endl; 
+		return 1;
+	}
+	std::cout << "Number of actuators: " << nbAct << std::endl;
+
+	// Initialize data
+	acs::Scalar *data = new acs::Scalar[nbAct];
+	for(int i=0; i<nbAct; i++){
+		data[i] = 0.0; 
+	}
 
 	g_controlSock = setup_socket(13131); 
 	std::cout << "UDP socket listening on port 13131" << std::endl; 
-	while(1){
+	while(!g_die){
 		bzero(g_cmdt, sizeof(g_cmdt)); 
 		int n = recvfrom(g_controlSock, (char*)g_cmdt, CMD_SIZ,0,0,0); 
 		if( n > 0 ){
@@ -144,11 +216,24 @@ int main(int argc, const char* argv[]) {
 					wf = wf.to(device); 
 					torch::Tensor dmctrl = controller->forward(wf);
 					dmctrl = dmctrl.to(torch::kCPU); 
-					// need to send this to the deformable mirror..
-					std::cout << "computation time " << (gettime() - sta)*1000.0 << " ms" << std::endl; 
-					//std::cout << dmctrl << std::endl;
+					long double comp = gettime(); 
+					float* p = dmctrl.data_ptr<float>();
+					for(int i=0; i<nbAct; i++){
+						data[i] = p[i]; 
+						//clamp values to keep from damaging the mirror.
+						if(data[i] > 0.15) data[i] = 0.15; 
+						if(data[i] < -0.15) data[i] = -0.15; 
+					}
+					dm_remove_ptt( data ); 
+					dm.Send( data );
+					std::cout << "computation " << (comp - sta)*1000.0 << " ms "; 
+					std::cout << "total " << (gettime() - sta)*1000.0 << " ms\n"; 
 				}
 			}
 		}
 	}
+	delete [] data;
+	acs::DM::PrintLastError();
+	close_socket(g_controlSock); 
+#endif
 }
