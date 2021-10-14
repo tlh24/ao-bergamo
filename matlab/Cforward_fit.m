@@ -1,4 +1,4 @@
-load ../rundata/centroids.mat
+load ../rundata/centroids_full.mat
 % x = double(x); 
 % y = double(y); 
 % v = double(v); 
@@ -165,7 +165,7 @@ load('../data/calibration_960nm_PSbeads_long4_geneopt.mat', 'genecalib')
 flatwf = ones(nc*2+1, 1); % last value is bias / 1
 flatwf(1:nc) = genecalib(:,1); 
 flatwf(nc+1:nc*2) = genecalib(:,2); 
-save('../rundata/centroids_cleaned.mat','-v7.3',...
+save('../rundata/centroids_full_cleaned.mat','-v7.3',...
 	'A','v','cmask','VS','flatwf')
 
 
