@@ -124,6 +124,14 @@ print('flatwf shape' , flatwf.shape)
 f.close()
 print(f'ncentroids:{ncentroids}'); 
 
+# save the input matrix to convert from SVD modes to wavefronts. 
+# (this still will rely on the system flat !!! )
+VS = torch.transpose(VS, 0, 1) # pytorch seems to be left-multiply
+# (input is the second dimension)
+flatwf = torch.squeeze(flatwf) # matlab seems to add that second dimension.
+np.save('dmcontrolnet/VS.weight.npy', VS.numpy(), allow_pickle=False)
+np.save('dmcontrolnet/VS.bias.npy', flatwf.numpy(), allow_pickle=False)
+
 
 for k in range(niters):
 	r = torch.randint(nvalidate, nsamp, (batch_size,)) # on the cpu
@@ -169,13 +177,6 @@ d['4.weight'] = analyzer[4].linear.weight
 d['4.bias'] = analyzer[4].linear.bias
 d['6.weight'] = analyzer[6].linear.weight
 d['6.bias'] = analyzer[6].linear.bias
-# ... and the input matrix to convert from SVD modes to wavefronts. 
-# (this still will rely on the system flat !!! )
-VS = torch.transpose(VS, 0, 1) # pytorch seems to be left-multiply
-# (input is the second dimension)
-flatwf = torch.squeeze(flatwf) # matlab seems to add that second dimension.
-np.save('dmcontrolnet/VS.npy', VS.numpy(), allow_pickle=False)
-np.save('dmcontrolnet/flatwf.npy', flatwf.numpy(), allow_pickle=False)
 
 for key in d:
 	val = d[key].cpu().detach()

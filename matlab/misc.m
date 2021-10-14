@@ -95,3 +95,14 @@ end
 % at a time. 
 % Skip the defocus dim, of course. 
 % tip-tilt is automaticall removed, and does not occurr in the bases. 
+
+
+% Torch-based control of the DM... 
+dat = [3.1415926; randn(97, 1)];
+dat = single(dat); 
+release(udps);
+udps = dsp.UDPSender('RemoteIPPort',13131);
+for k = 1:10000
+    udps(dat)
+    dat(2:end) = randn(97,1) * 0.1;
+end
