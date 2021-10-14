@@ -99,10 +99,10 @@ analyzer = nn.Sequential(
 	nn.LeakyReLU(0.2), 
 	EqualLinear(256, 97)).cuda(device)
 
-optimizer = optim.AdamW(analyzer.parameters(), lr=0.001, betas=(0.0, 0.99), weight_decay=1e-3)
+optimizer = optim.AdamW(analyzer.parameters(), lr=0.0001, betas=(0.0, 0.99), weight_decay=2e-4)
 lossfunc = torch.nn.SmoothL1Loss() # mean reduction
 
-niters = 5000
+niters = 500000
 slowloss = 0.0
 losses = np.zeros((2,niters)) 
 nvalidate = 50000
@@ -110,9 +110,15 @@ nvalidate = 50000
 f = h5py.File('../rundata/centroids_cleaned.mat', 'r')
 A = f.get('A')[:]
 v = f.get('v')[:]
+VS = f.get('VS')[:]
+flatwf = f.get('flatwf')[:]
 A = torch.from_numpy(A.astype(np.single)) 
 v = torch.from_numpy(v.astype(np.single))
+VS = torch.from_numpy(VS.astype(np.single))
+flatwf = torch.from_numpy(flatwf.astype(np.single))
 (nsamp, ncentroids) = A.shape;
+print('VS shape' , VS.shape)
+print('flatwf shape' , flatwf.shape)
 f.close()
 print(f'ncentroids:{ncentroids}'); 
 
@@ -153,6 +159,7 @@ print(f'validation loss: {sumloss}')
 # thereby properly scaling the weights. 
 d = {}
 d['0.weight'] = analyzer[0].linear.weight
+print('0.weight shape', analyzer[0].linear.weight.shape)
 d['0.bias'] = analyzer[0].linear.bias
 d['2.weight'] = analyzer[2].linear.weight
 d['2.bias'] = analyzer[2].linear.bias
@@ -160,6 +167,13 @@ d['4.weight'] = analyzer[4].linear.weight
 d['4.bias'] = analyzer[4].linear.bias
 d['6.weight'] = analyzer[6].linear.weight
 d['6.bias'] = analyzer[6].linear.bias
+# ... and the input matrix to convert from SVD modes to wavefronts. 
+# (this still will rely on the system flat !!! )
+VS = torch.transpose(VS, 0, 1) # pytorch seems to be left-multiply
+# (input is the second dimension)
+flatwf = torch.squeeze(flatwf) # matlab seems to add that second dimension.
+np.save('dmcontrolnet/VS.npy', VS.numpy(), allow_pickle=False)
+np.save('dmcontrolnet/flatwf.npy', flatwf.numpy(), allow_pickle=False)
 
 for key in d:
 	val = d[key].cpu().detach()
@@ -194,6 +208,3 @@ with torch.no_grad():
 
 sumloss = sumloss / (nvalidate / batch_size)
 print(f'validation loss: {sumloss}')
-#torch.save(dmcontrolnet.state_dict(), 'dmControlNet.pt')
-
-#dmcontrolnet.load_state_dict(torch.load('dmControlNet.pt'))

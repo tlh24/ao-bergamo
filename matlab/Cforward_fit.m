@@ -79,8 +79,6 @@ xlabel('valid centroid (repeats once)');
 C = A'\v';  
 pred = A' * C;  
 
-save('../rundata/centroids_cleaned.mat','-v7.3','A','v','cmask')
-
 err = v' - pred; 
 
 if 1
@@ -142,8 +140,7 @@ subplot(1,2,1)
 scatter(mx(indx), -my(indx), ceil(abs(q*1e11)+0.001), colors, 'filled'); 
 title('mean weight of C (fwd trans mtx) * 1e11 per centroid'); 
 
-% still confused.  
-% Try looking at the std of data on each centroid? 
+% Check by looking at the std of data on each centroid
 subplot(1,2,2)
 Cstd = std(dx, [], 2) + std(dy, [], 2); 
 [q, indx] = sort(Cstd); 
@@ -160,6 +157,17 @@ answer = input('Save calibration_forward.mat? (1 / 0): ');
 if answer == 1
 	save('../data/calibration_forward.mat', 'Cforward', 'cmask', 'mx', 'my', 'cmaskr','VS');
 end
+
+% also need to save for pytorch model fitting: 
+% note hard-coded flat calibration!! (Needs to be a hdf5 file, might as
+% well splice in here)
+load('../data/calibration_960nm_PSbeads_long4_geneopt.mat', 'genecalib')
+flatwf = ones(nc*2+1, 1); % last value is bias / 1
+flatwf(1:nc) = genecalib(:,1); 
+flatwf(nc+1:nc*2) = genecalib(:,2); 
+save('../rundata/centroids_cleaned.mat','-v7.3',...
+	'A','v','cmask','VS','flatwf')
+
 
 answer = input('plot the SVD modes? (1 / 0)');
 if answer == 1
