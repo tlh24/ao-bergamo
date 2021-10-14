@@ -1,4 +1,4 @@
-load ../rundata/centroids.mat
+load ../rundata/centroids_full.mat
 % x = double(x); 
 % y = double(y); 
 % v = double(v); 
