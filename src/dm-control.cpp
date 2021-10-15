@@ -253,7 +253,7 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 		for(int i=0; i<97; i++){
 			double d = 0.0;
 			if(i < 20){
-					d = svd_uival[i]; 
+				d = svd_uival[i]; 
 			}
 			gsl_matrix_set(scl, i, 0, d); 
 			// note: VS is pre-scaled to accept input [-1..+1]

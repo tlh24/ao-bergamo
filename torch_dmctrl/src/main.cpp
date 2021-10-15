@@ -159,7 +159,7 @@ int main(int argc, const char* argv[]) {
 
 	// Create the device we pass around based on whether CUDA is available.
 	torch::Device device(torch::kCPU);
-	if (torch::cuda::is_available()) {
+	if (torch::cuda::is_available() && 0) {
 		std::cout << "CUDA is available! Controller on GPU." << std::endl;
 		device = torch::Device(torch::kCUDA);
 	}
@@ -168,15 +168,16 @@ int main(int argc, const char* argv[]) {
 	dmControlNet controller(ncentroids); 
 	LoadStateDict(controller, "/home/tlh24/ao-bergamo/ml/dmcontrolnet"); 
 	controller->to(device); 
+	torch::Tensor dmctrl;
 	for(int i=0; i<10; i++){
 		long double sta = gettime(); 
-		torch::Tensor random_wavefront = torch::randn({97});
+		torch::Tensor random_wavefront = torch::zeros({97});
 		random_wavefront = random_wavefront.to(device); 
-		torch::Tensor dmctrl = controller->forward(random_wavefront); 
+		dmctrl = controller->forward(random_wavefront); 
 		std::cout << "computation time " << (gettime() - sta)*1000.0 << " ms" << std::endl; 
 		//without transferring random_wavefront to the gpu, computation is ~130us (!!)
 	}
-	// std::cout << dmctrl << std::endl; 
+	std::cout << dmctrl << std::endl; 
 	// this should be ~= BestDMcommand.
 	// and indeed it looks ok (not perfect?)
 	
