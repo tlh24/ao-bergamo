@@ -21,3 +21,8 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 # to clean: 
 # rm -rf CMake* cmake_* detect_* Makefile
 
+# prerequisites: 
+# sudo apt-get install cmake
+# download cudnn dev from nvidia (deb package works fine)
+# install cnpy from git
+

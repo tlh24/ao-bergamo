@@ -248,15 +248,15 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 		gsl_matrix_free(wfx); 
 		gsl_matrix_free(wfy); 
 		gsl_matrix_free(tweakedflat); 
-    } else if(g_VS != NULL){
-        gsl_matrix* scl = gsl_matrix_alloc(97, 1); 
+	} else if(g_VS != NULL){
+		gsl_matrix* scl = gsl_matrix_alloc(97, 1); 
 		for(int i=0; i<97; i++){
-            double d = 0.0
-            if(i < 20){
-                d = svd_uival[i]; 
-            }
+			double d = 0.0;
+			if(i < 20){
+					d = svd_uival[i]; 
+			}
 			gsl_matrix_set(scl, i, 0, d); 
-            // note: VS is pre-scaled to accept input [-1..+1]
+			// note: VS is pre-scaled to accept input [-1..+1]
 		}
 		gsl_matrix* wf = gsl_matrix_alloc(g_activeCentroids*2+1, 1); 
 		for(int i=0; i<g_activeCentroids; i++){

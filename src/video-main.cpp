@@ -587,9 +587,6 @@ void* video_thread(void*){
 						dmVec->store(); 
 					}
 				}
-				for(int i=0; i<97; i++){
-					dm_data[i] = 0.f;
-				}
 				if(g_test_dm.get()){
 					if(g_nFrames%5 == 4){
 						//generate a new dm command signal. 

@@ -100,9 +100,9 @@ end
 % Torch-based control of the DM... 
 dat = [3.1415926; randn(97, 1)];
 dat = single(dat); 
-release(udps);
 udps = dsp.UDPSender('RemoteIPPort',13131);
-for k = 1:10000
+for k = 1:1000
     udps(dat)
     dat(2:end) = randn(97,1) * 0.1;
 end
+release(udps); 
