@@ -15,6 +15,14 @@ end
 
 k = genop.k; 
 N = genop.N; 
+if mod(k, 3) == 1
+    genop.vd = vd;
+    genop.k = k + 1; 
+elseif mod(k,3) == 2
+    genop.vd = genop.vd + vd;
+    genop.k = k + 1; 
+else
+vd = vd + genop.vd;
 
 genop.DMcommandHist = [genop.DMcommandHist genop.DMcommand]; 
 genop.DMcommandVd = [genop.DMcommandVd vd]; 
@@ -48,15 +56,20 @@ end
 mother = genop.DMcommandHist(:,pick2); 
 recomb = randn(97, 1); 
 kid = father .* (recomb > 0) + mother .* (recomb < 0); 
-noise = (randn(97,1)*temperature) .* (rand(97, 1) > 0.83); 
+noise = (randn(97,1)*temperature) .* (rand(97, 1) > 0.83);
+noise = noise .* [ones(5, 1); zeros(92, 1)]; 
 genop.DMcommand = reshape(kid+noise, 97, 1); 
 
-genop.udps(single([3.1415926; genop.DMcommand])); 
+tcmd = zeros(97, 1); 
+tax = floor(k/300)+1
+tcmd(tax) = 4*sin(k/10);
+genop.udps(single([3.1415926; tcmd])); 
 
 genop.save_dmcommand(k, :) = genop.DMcommand;
 genop.save_vd(k) = vd;
 genop.save_time(k) = toc; 
 
-disp([genop.DMcommandVd(1) mean(genop.DMcommandVd) temperature*1e7 vd]); % display the best one. 
+% disp([genop.DMcommandVd(1) mean(genop.DMcommandVd) temperature*1e7 vd]); % display the best one. 
 
 genop.k = k + 1; 
+end % else
