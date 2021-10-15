@@ -409,8 +409,7 @@ void dm_actuator_to_xy(int act, double* x, double* y){
 }
 
 void dm_remove_ptt(float* dm_data){
-	// remove piston, tilt, and tip from the DM control signal. 
-	//need to remove piston, tip, and tilt.  
+	// remove piston, tilt, and tip from the DM control signal.  
 	float piston = 0.f; 
 	for(int i=0; i<97; i++){
 		piston += dm_data[i]; 
