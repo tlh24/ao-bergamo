@@ -167,7 +167,7 @@ flatwf(1:nc) = genecalib(:,1) - mx; % let's hope the microscope optics haven't m
 flatwf(nc+1:nc*2) = genecalib(:,2) - my; 
 flatbad = abs(flatwf) > 10;
 flatwf(flatbad) = 0.0; 
-save('../rundata/centroids_cleaned.mat','-v7.3',...
+save('../rundata/centroids_full_cleaned.mat','-v7.3',...
 	'A','v','cmask','VS','flatwf')
 
 
