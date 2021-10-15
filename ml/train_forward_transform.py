@@ -88,8 +88,8 @@ batch_size = 16 # 64 converges more slowly, obvi
 # layers: in, 1024, 1024 512, 256, 97: validation loss 1.3e-4
 # layers: in, 512, 256, 97: 1e-4
 # straight nn.Linear, no EqualLinear, 500k train steps before: 1.7e-3
-# EqualLInear, LR = 1e-4, decay = 2e-4, 2M steps, validation loss = 3.4e-5.
-# LR = 5e-5, weight_decay = 1e-4, 2.5M steps, validation loss 3.5e-5
+# EqualLinear, LR = 1e-4, decay = 2e-4, 2M steps, betas (0.0 0.9), validation loss = 3.4e-5.
+# LR = 5e-5, weight_decay = 1e-4, 2.5M steps, betas (0.0 0.9), validation loss 3.5e-5, 
 # -- EqualLinear really works! 
 ncentroids = 1075
 analyzer = nn.Sequential(
@@ -101,15 +101,15 @@ analyzer = nn.Sequential(
 	nn.LeakyReLU(0.2), 
 	EqualLinear(256, 97)).cuda(device)
 
-optimizer = optim.AdamW(analyzer.parameters(), lr=1e-4, betas=(0.0, 0.99), weight_decay=2e-4)
+optimizer = optim.AdamW(analyzer.parameters(), lr=1e-4, betas=(0.9, 0.999), weight_decay=2e-4)
 lossfunc = torch.nn.SmoothL1Loss() # mean reduction
 
 niters = 2500000
 slowloss = 0.0
 losses = np.zeros((2,niters)) 
-nvalidate = 50000
+nvalidate = 100000
 
-f = h5py.File('../rundata/centroids_cleaned.mat', 'r')
+f = h5py.File('../rundata/centroids_full_cleaned.mat', 'r')
 A = f.get('A')[:]
 v = f.get('v')[:]
 VS = f.get('VS')[:]
