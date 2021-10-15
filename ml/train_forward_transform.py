@@ -90,6 +90,8 @@ batch_size = 16 # 64 converges more slowly, obvi
 # straight nn.Linear, no EqualLinear, 500k train steps before: 1.7e-3
 # EqualLinear, LR = 1e-4, decay = 2e-4, 2M steps, betas (0.0 0.9), validation loss = 3.4e-5.
 # LR = 5e-5, weight_decay = 1e-4, 2.5M steps, betas (0.0 0.9), validation loss 3.5e-5, 
+# LR = 1e-4, weight_decay = 2e-4, 2.5M steps, betas (0.9 0.999), validation loss 2.9e-5, 
+# LR = 5e-5, weight_decay = 5e-5, 2.5M steps, betas (0.9 0.999), validation loss 3.3e-5, 
 # -- EqualLinear really works! 
 ncentroids = 1075
 analyzer = nn.Sequential(
