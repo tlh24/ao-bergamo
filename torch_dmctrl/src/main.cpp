@@ -83,10 +83,20 @@ void LoadStateDict(dmControlNet& module,
 		float* loaded_data = arr.data<float>(); 
 		std::cout << "loaded " << file_name << " shape " << arr.shape << std::endl; 
 		if(arr.shape.size() == 2){
-			torch::Tensor u = val.value(); 
-			for(int i = 0; i < arr.shape[0]; i++){
-				for(int j = 0; j < arr.shape[1]; j++){
-					u.index_put_({i,j}, loaded_data[i*arr.shape[1] + j]); 
+			// VS weight matrix is written in fortran order, for unknown reasons.. !
+			if(arr.shape[0] == 1075){
+				torch::Tensor u = val.value(); 
+				for(int i = 0; i < arr.shape[0]; i++){
+					for(int j = 0; j < arr.shape[1]; j++){
+						u.index_put_({i,j}, loaded_data[i + arr.shape[0] * j]); 
+					}
+				}
+			} else {
+				torch::Tensor u = val.value(); 
+				for(int i = 0; i < arr.shape[0]; i++){
+					for(int j = 0; j < arr.shape[1]; j++){
+						u.index_put_({i,j}, loaded_data[i*arr.shape[1] + j]); 
+					}
 				}
 			}
 		}
@@ -207,7 +217,7 @@ int main(int argc, const char* argv[]) {
 		data[i] = 0.0; 
 	}
 	
-	std::cout << controller->vs_slice(0) << std::endl; 
+// 	std::cout << controller->vs_slice(0) << std::endl; 
 
 	g_controlSock = setup_socket(13131); 
 	std::cout << "UDP socket listening on port 13131" << std::endl; 
@@ -220,9 +230,9 @@ int main(int argc, const char* argv[]) {
 				float check = g_cmdt[0]; 
 				if(check > 3.141 && check < 3.1416){
 					long double sta = gettime(); 
-					// torch::Tensor wf = torch::from_blob(&(g_cmdt[1]), {97}); 
-					torch::Tensor wf = torch::zeros({97}); 
-					wf[3] = 14.0*sin((double)gettime()); 
+					torch::Tensor wf = torch::from_blob(&(g_cmdt[1]), {97}); 
+// 					torch::Tensor wf = torch::zeros({97}); 
+// 					wf[3] = 14.0*sin((double)gettime()); 
 					wf = wf.to(device); 
 					torch::Tensor dmctrl = controller->forward(wf);
 					dmctrl = dmctrl.to(torch::kCPU); 
@@ -238,7 +248,7 @@ int main(int argc, const char* argv[]) {
 					dm.Send( data );
 					torch::Tensor pt = torch::zeros({1, 97}); 
 					pt.index_put_({ 0, Slice()}, dmctrl); 
-					std::cout << dmctrl << std::endl; 
+// 				std::cout << dmctrl << std::endl; 
 					std::cout << "computation " << (comp - sta)*1000.0 << " ms "; 
 					std::cout << "total " << (gettime() - sta)*1000.0 << " ms\n"; 
 				}
