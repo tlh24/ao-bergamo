@@ -28,6 +28,7 @@
 const int64_t ncentroids = 1075;
 
 using namespace torch;
+using namespace torch::indexing;
 
 
 struct dmControlNetImpl : nn::Module {
@@ -61,6 +62,10 @@ struct dmControlNetImpl : nn::Module {
 		x = linear4(x);
 		return x * 0.15; //NB! training scaled to +-1.0
 	}
+	torch::Tensor vs_slice(int i){
+		torch::Tensor vs = linearVS->weight; 
+		return vs.index({Slice(), i}); 
+	}
 
 	nn::Linear linearVS, linear1, linear2, linear3, linear4;
 	nn::LeakyReLU relu1, relu2, relu3; 
@@ -81,14 +86,14 @@ void LoadStateDict(dmControlNet& module,
 			torch::Tensor u = val.value(); 
 			for(int i = 0; i < arr.shape[0]; i++){
 				for(int j = 0; j < arr.shape[1]; j++){
-					u[i][j] = loaded_data[i*arr.shape[1] + j]; 
+					u.index_put_({i,j}, loaded_data[i*arr.shape[1] + j]); 
 				}
 			}
 		}
 		if(arr.shape.size() == 1){
 			torch::Tensor u = val.value(); 
 			for(int i = 0; i < arr.shape[0]; i++){
-				u[i] = loaded_data[i]; 
+				u.index_put_({i}, loaded_data[i]); 
 			}
 		}
 	}
@@ -201,6 +206,8 @@ int main(int argc, const char* argv[]) {
 	for(int i=0; i<nbAct; i++){
 		data[i] = 0.0; 
 	}
+	
+	std::cout << controller->vs_slice(0) << std::endl; 
 
 	g_controlSock = setup_socket(13131); 
 	std::cout << "UDP socket listening on port 13131" << std::endl; 
@@ -213,7 +220,9 @@ int main(int argc, const char* argv[]) {
 				float check = g_cmdt[0]; 
 				if(check > 3.141 && check < 3.1416){
 					long double sta = gettime(); 
-					torch::Tensor wf = torch::from_blob(&(g_cmdt[1]), {97}); 
+					// torch::Tensor wf = torch::from_blob(&(g_cmdt[1]), {97}); 
+					torch::Tensor wf = torch::zeros({97}); 
+					wf[3] = 14.0*sin((double)gettime()); 
 					wf = wf.to(device); 
 					torch::Tensor dmctrl = controller->forward(wf);
 					dmctrl = dmctrl.to(torch::kCPU); 
@@ -227,6 +236,9 @@ int main(int argc, const char* argv[]) {
 					}
 					dm_remove_ptt( data ); 
 					dm.Send( data );
+					torch::Tensor pt = torch::zeros({1, 97}); 
+					pt.index_put_({ 0, Slice()}, dmctrl); 
+					std::cout << dmctrl << std::endl; 
 					std::cout << "computation " << (comp - sta)*1000.0 << " ms "; 
 					std::cout << "total " << (gettime() - sta)*1000.0 << " ms\n"; 
 				}
