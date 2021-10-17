@@ -195,7 +195,19 @@ dmcontrolnet = nn.Sequential(
 	nn.Linear(256, 97)).cuda(device)
 
 dmcontrolnet.load_state_dict(d)
-# dmcontrolnet.load_state_dict(analyzer.state_dict())
+
+d = dmcontrolnet.state_dict()
+for key in d:
+	d[key] = torch.from_numpy(np.load('dmcontrolnet/' + key + '.npy'))
+
+dmcontrolnet.load_state_dict(d)
+
+for k in range(0,5):
+	inwf = vs[:, k]
+	outdm = dmcontrolnet.forward(torch.from_numpy(inwf))
+	plt.plot(outdm.detach().numpy())
+
+plt.show()
 
 # check this simplified network is working.
 sumloss = 0.0
