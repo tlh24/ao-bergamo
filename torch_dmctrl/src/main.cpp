@@ -83,20 +83,10 @@ void LoadStateDict(dmControlNet& module,
 		float* loaded_data = arr.data<float>(); 
 		std::cout << "loaded " << file_name << " shape " << arr.shape << std::endl; 
 		if(arr.shape.size() == 2){
-			// VS weight matrix is written in fortran order, for unknown reasons.. !
-			if(arr.shape[0] == 1075){
-				torch::Tensor u = val.value(); 
-				for(int i = 0; i < arr.shape[0]; i++){
-					for(int j = 0; j < arr.shape[1]; j++){
-						u.index_put_({i,j}, loaded_data[i + arr.shape[0] * j]); 
-					}
-				}
-			} else {
-				torch::Tensor u = val.value(); 
-				for(int i = 0; i < arr.shape[0]; i++){
-					for(int j = 0; j < arr.shape[1]; j++){
-						u.index_put_({i,j}, loaded_data[i*arr.shape[1] + j]); 
-					}
+			torch::Tensor u = val.value(); 
+			for(int i = 0; i < arr.shape[0]; i++){
+				for(int j = 0; j < arr.shape[1]; j++){
+					u.index_put_({i,j}, loaded_data[i*arr.shape[1] + j]); 
 				}
 			}
 		}

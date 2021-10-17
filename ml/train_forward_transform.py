@@ -128,8 +128,9 @@ print(f'ncentroids:{ncentroids}');
 
 # save the input matrix to convert from SVD modes to wavefronts. 
 # (this still will rely on the system flat !!! )
-VS = torch.transpose(VS, 0, 1) # pytorch seems to be left-multiply
+# VS = torch.transpose(VS, 0, 1) # pytorch seems to be left-multiply
 # (input is the second dimension)
+# this has been corrected in matlab.  
 flatwf = torch.squeeze(flatwf) # matlab adds that second dimension.
 np.save('dmcontrolnet/VS.weight.npy', VS.numpy(), allow_pickle=False)
 np.save('dmcontrolnet/VS.bias.npy', flatwf.numpy(), allow_pickle=False)
