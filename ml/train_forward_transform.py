@@ -130,7 +130,7 @@ print(f'ncentroids:{ncentroids}');
 # (this still will rely on the system flat !!! )
 VS = torch.transpose(VS, 0, 1) # pytorch seems to be left-multiply
 # (input is the second dimension)
-flatwf = torch.squeeze(flatwf) # matlab seems to add that second dimension.
+flatwf = torch.squeeze(flatwf) # matlab adds that second dimension.
 np.save('dmcontrolnet/VS.weight.npy', VS.numpy(), allow_pickle=False)
 np.save('dmcontrolnet/VS.bias.npy', flatwf.numpy(), allow_pickle=False)
 

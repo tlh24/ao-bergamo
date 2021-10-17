@@ -28,6 +28,7 @@
 const int64_t ncentroids = 1075;
 
 using namespace torch;
+using namespace torch::indexing;
 
 
 struct dmControlNetImpl : nn::Module {
@@ -61,6 +62,10 @@ struct dmControlNetImpl : nn::Module {
 		x = linear4(x);
 		return x * 0.15; //NB! training scaled to +-1.0
 	}
+	torch::Tensor vs_slice(int i){
+		torch::Tensor vs = linearVS->weight; 
+		return vs.index({Slice(), i}); 
+	}
 
 	nn::Linear linearVS, linear1, linear2, linear3, linear4;
 	nn::LeakyReLU relu1, relu2, relu3; 
@@ -78,17 +83,27 @@ void LoadStateDict(dmControlNet& module,
 		float* loaded_data = arr.data<float>(); 
 		std::cout << "loaded " << file_name << " shape " << arr.shape << std::endl; 
 		if(arr.shape.size() == 2){
-			torch::Tensor u = val.value(); 
-			for(int i = 0; i < arr.shape[0]; i++){
-				for(int j = 0; j < arr.shape[1]; j++){
-					u[i][j] = loaded_data[i*arr.shape[1] + j]; 
+			// VS weight matrix is written in fortran order, for unknown reasons.. !
+			if(arr.shape[0] == 1075){
+				torch::Tensor u = val.value(); 
+				for(int i = 0; i < arr.shape[0]; i++){
+					for(int j = 0; j < arr.shape[1]; j++){
+						u.index_put_({i,j}, loaded_data[i + arr.shape[0] * j]); 
+					}
+				}
+			} else {
+				torch::Tensor u = val.value(); 
+				for(int i = 0; i < arr.shape[0]; i++){
+					for(int j = 0; j < arr.shape[1]; j++){
+						u.index_put_({i,j}, loaded_data[i*arr.shape[1] + j]); 
+					}
 				}
 			}
 		}
 		if(arr.shape.size() == 1){
 			torch::Tensor u = val.value(); 
 			for(int i = 0; i < arr.shape[0]; i++){
-				u[i] = loaded_data[i]; 
+				u.index_put_({i}, loaded_data[i]); 
 			}
 		}
 	}
@@ -159,7 +174,7 @@ int main(int argc, const char* argv[]) {
 
 	// Create the device we pass around based on whether CUDA is available.
 	torch::Device device(torch::kCPU);
-	if (torch::cuda::is_available()) {
+	if (torch::cuda::is_available() && 0) {
 		std::cout << "CUDA is available! Controller on GPU." << std::endl;
 		device = torch::Device(torch::kCUDA);
 	}
@@ -168,15 +183,16 @@ int main(int argc, const char* argv[]) {
 	dmControlNet controller(ncentroids); 
 	LoadStateDict(controller, "/home/tlh24/ao-bergamo/ml/dmcontrolnet"); 
 	controller->to(device); 
+	torch::Tensor dmctrl;
 	for(int i=0; i<10; i++){
 		long double sta = gettime(); 
-		torch::Tensor random_wavefront = torch::randn({97});
+		torch::Tensor random_wavefront = torch::zeros({97});
 		random_wavefront = random_wavefront.to(device); 
-		torch::Tensor dmctrl = controller->forward(random_wavefront); 
+		dmctrl = controller->forward(random_wavefront); 
 		std::cout << "computation time " << (gettime() - sta)*1000.0 << " ms" << std::endl; 
 		//without transferring random_wavefront to the gpu, computation is ~130us (!!)
 	}
-	// std::cout << dmctrl << std::endl; 
+	std::cout << dmctrl << std::endl; 
 	// this should be ~= BestDMcommand.
 	// and indeed it looks ok (not perfect?)
 	
@@ -200,6 +216,8 @@ int main(int argc, const char* argv[]) {
 	for(int i=0; i<nbAct; i++){
 		data[i] = 0.0; 
 	}
+	
+// 	std::cout << controller->vs_slice(0) << std::endl; 
 
 	g_controlSock = setup_socket(13131); 
 	std::cout << "UDP socket listening on port 13131" << std::endl; 
@@ -213,6 +231,8 @@ int main(int argc, const char* argv[]) {
 				if(check > 3.141 && check < 3.1416){
 					long double sta = gettime(); 
 					torch::Tensor wf = torch::from_blob(&(g_cmdt[1]), {97}); 
+// 					torch::Tensor wf = torch::zeros({97}); 
+// 					wf[3] = 14.0*sin((double)gettime()); 
 					wf = wf.to(device); 
 					torch::Tensor dmctrl = controller->forward(wf);
 					dmctrl = dmctrl.to(torch::kCPU); 
@@ -226,6 +246,9 @@ int main(int argc, const char* argv[]) {
 					}
 					dm_remove_ptt( data ); 
 					dm.Send( data );
+					torch::Tensor pt = torch::zeros({1, 97}); 
+					pt.index_put_({ 0, Slice()}, dmctrl); 
+// 				std::cout << dmctrl << std::endl; 
 					std::cout << "computation " << (comp - sta)*1000.0 << " ms "; 
 					std::cout << "total " << (gettime() - sta)*1000.0 << " ms\n"; 
 				}
