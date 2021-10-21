@@ -151,8 +151,8 @@ bool dm_control_init()
 		printf("could not load variable cmask from calibration_forward.mat\n"); 
 	}
 	res = read_matfile_variable(matfp, "data/calibration_forward.mat", "Cforward", g_activeCentroids*2 + 1, 97, &g_cforward); 
-    // read in the SVD-based modes. 
-    res = read_matfile_variable(matfp, "data/calibration_forward.mat", "VS", g_activeCentroids*2 + 1, 97, &g_VS); 
+	// read in the SVD-based modes. 
+	res = read_matfile_variable(matfp, "data/calibration_forward.mat", "VS", g_activeCentroids*2 + 1, 97, &g_VS); 
     
 	Mat_Close(matfp);
 	if(!res) return res; 
@@ -205,7 +205,7 @@ bool dm_control_init()
 }
 
 void dm_control_run(float* zernike, int geneopt_active, float* command, float* svd_uival)
-// zernike is eg 36x1; command is eg 97x1.
+// zernike is eg 36x1, can be NULL; command is eg 97x1.
 {
 	int k = 0; 
 	for(int i=0; i<3000 && k<g_activeCentroids; i++){
@@ -252,7 +252,7 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 		gsl_matrix* scl = gsl_matrix_alloc(97, 1); 
 		for(int i=0; i<97; i++){
 			double d = 0.0;
-			if(i < 20){
+			if(i < 10){
 				d = svd_uival[i]; 
 			}
 			gsl_matrix_set(scl, i, 0, d); 
@@ -262,18 +262,18 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 		for(int i=0; i<g_activeCentroids; i++){
 			gsl_matrix_set(wf, i, 0, 
 				gsl_matrix_get(g_genecalib[geneopt_active], i, 0)); 
-			gsl_matrix_set(wf, i+2, 0, 
+			gsl_matrix_set(wf, g_activeCentroids + i, 0, 
 				gsl_matrix_get(g_genecalib[geneopt_active], i, 1)); 
 		}
 		gsl_matrix_set(wf, g_activeCentroids*2, 0, 1.0); 
-        gsl_blas_dgemm(CBNT, CBNT, 1.0, g_VS, scl, 1.0, wf); 
+		gsl_blas_dgemm(CBNT, CBNT, 1.0, g_VS, scl, 1.0, wf); 
 		gsl_matrix* tweakedflat = gsl_matrix_alloc(g_activeCentroids, 2); 
         // this is inefficient as we could just pass wf through cforward.
 		for(int i=0; i<g_activeCentroids; i++){
 			gsl_matrix_set(tweakedflat, i, 0, 
 					gsl_matrix_get(wf, i, 0)); 
 			gsl_matrix_set(tweakedflat, i, 1, 
-					gsl_matrix_get(wf, i*2, 0)); 
+					gsl_matrix_get(wf, g_activeCentroids+i, 0)); 
 		}
 		gsl_matrix_sub(g_dat, tweakedflat); // this is dx and dy, flat-compensated. output is on g_dat.
 		gsl_matrix_free(scl); 
@@ -283,8 +283,14 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 		gsl_matrix_sub(g_dat, g_genecalib[geneopt_active]); // this is dx and dy, flat-compensated. output is on g_dat.
 	}
 	
-	for(int i=0; i<g_nZernike; i++){
-		gsl_matrix_set(g_zcoef, i, 0, zernike[i]); 
+	if(zernike){
+		for(int i=0; i<g_nZernike; i++){
+			gsl_matrix_set(g_zcoef, i, 0, zernike[i]); 
+		}
+	} else {
+		for(int i=0; i<g_nZernike; i++){
+			gsl_matrix_set(g_zcoef, i, 0, 0.0); 
+		}
 	}
 	gsl_matrix* desdx = gsl_matrix_alloc(g_activeCentroids, 1); 
 	gsl_matrix* desdy = gsl_matrix_alloc(g_activeCentroids, 1); 
@@ -300,6 +306,7 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 	}
 	sx /= (double)g_activeCentroids; 
 	sy /= (double)g_activeCentroids; 
+	printf("sx sy %f %f\n", sx, sy); 
 	// and combine with the desired dx and dy to get 'A'
 	gsl_matrix* A = gsl_matrix_alloc(g_activeCentroids*2+1, 1); 
 	for(int i=0; i<g_activeCentroids; i++){
@@ -310,7 +317,7 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 	}
 	gsl_matrix_set(A, g_activeCentroids*2, 0, 1.0); 
 	
-	gsl_blas_dgemm(CBT, CBNT, -0.5, g_cforward, A, 0.995, g_dmcommand);
+	gsl_blas_dgemm(CBT, CBNT, -0.4, g_cforward, A, 0.99, g_dmcommand);
 	
 	for(int i=0; i<97; i++){
 		double x = gsl_matrix_get(g_dmcommand, i, 0); 

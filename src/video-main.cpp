@@ -575,7 +575,7 @@ void* video_thread(void*){
 				g_dataSize_label.set((float)centroidVec->nstored()); 
 				lastFrameTime = start; 
 				if(g_nFrames%5 == 4){
-					if(g_record_data.get() && centroidVec->nstored() < 1250000){ 
+					if(g_record_data.get() && centroidVec->nstored() < 240000){ 
 						for(int i=0; i<g_nCentroids && i<1100; i++){
 							centroidVec->m_stor[i] = g_centroids[i][0]; 
 							centroidVec->m_stor2[i] = g_centroids[i][1]; 
@@ -600,11 +600,16 @@ void* video_thread(void*){
 						memcpy(mmap_dmctrl, dm_data, 97*4); 
 					}else{
 						if(g_control_dm.get() && g_dmcontrolen){
-							dm_control_run(mmap_zernike, g_geneopt_active, dm_data, g_svd_uival); 
+							if(g_matlab_interface.get()){
+								dm_control_run(mmap_zernike, g_geneopt_active, dm_data, g_svd_uival); 
+							} else {
+								dm_control_run(NULL, g_geneopt_active, dm_data, g_svd_uival); 
+							}
 							//echo command to matlab for visualization.
 							memcpy(mmap_dmctrl, dm_data, 97*4); 
 						}else{
-							memcpy(dm_data, mmap_dmctrl, 97*4); 
+							if(g_matlab_interface.get())
+								memcpy(dm_data, mmap_dmctrl, 97*4); 
 						}
 					}
 				}

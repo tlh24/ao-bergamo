@@ -164,10 +164,10 @@ int main(int argc, const char* argv[]) {
 
 	// Create the device we pass around based on whether CUDA is available.
 	torch::Device device(torch::kCPU);
-	if (torch::cuda::is_available() && 0) {
-		std::cout << "CUDA is available! Controller on GPU." << std::endl;
-		device = torch::Device(torch::kCUDA);
-	}
+// 	if (torch::cuda::is_available() && 0) {
+// 		std::cout << "CUDA is available! Controller on GPU." << std::endl;
+// 		device = torch::Device(torch::kCUDA);
+// 	}
 	// note: both GPU and CPU have about the same latency on the Lenovo Carbon X1-v3 - Geforce 1650
 
 	dmControlNet controller(ncentroids); 

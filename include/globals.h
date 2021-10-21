@@ -125,6 +125,7 @@ extern bool g_set_exposure;
 extern bool g_calibrated; 
 extern bool g_reset_data; //clear memory
 extern bool g_write_data; //write to disc
+extern Gtk_CheckboxLabel g_matlab_interface; 
 extern Gtk_CheckboxLabel g_test_dm; 
 extern Gtk_CheckboxLabel g_zero_dm; 
 extern Gtk_CheckboxLabel g_control_dm;

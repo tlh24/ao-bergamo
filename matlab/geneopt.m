@@ -47,7 +47,7 @@ while k < NN
 	% to get new draws from the optimization distro. 
 	if 0
 		if mod(k, N) == 1
-			if 1
+			if 0
 				DMcommand = Best_DMcommand'; 
 			else
 				DMcommand = zeros(97, 1); 

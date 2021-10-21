@@ -116,6 +116,7 @@ Gtk_CheckboxLabel g_record_data(false);
 Gtk_CheckboxLabel g_display_camimage(true); 
 Gtk_CheckboxLabel g_display_centroids(true); 
 Gtk_CheckboxLabel g_display_calib_centroids(true); 
+Gtk_CheckboxLabel g_matlab_interface(false); 
 Gtk_CheckboxLabel g_test_dm(false); 
 Gtk_CheckboxLabel g_zero_dm(false); 
 Gtk_CheckboxLabel g_control_dm(false); 
@@ -918,6 +919,7 @@ GtkWidget *create_gl_window(){
 	g_display_camimage.make("display camera image", bx2); 
 	g_display_centroids.make("display centrods", bx2); 
 	g_display_calib_centroids.make("disp calibration", bx2); 
+	g_matlab_interface.make("matlab mmap interface", bx2); 
 	g_test_dm.make("test deformable mirror", bx2); 
 	g_zero_dm.make("zero DM command", bx2);
 	g_control_dm.make("closed-loop control of DM", bx2);
