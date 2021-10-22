@@ -11,7 +11,7 @@ LDLIBS     := $(shell $(PYLON_ROOT)/bin/pylon-config --libs)
 LDLIBS     += $(shell pkg-config --libs $(GLIBS))
 LDLIBS     += -lpng -lrt -lmatio -lpthread -lGL -lGLEW -lgsl -lgslcblas -lfreetype 
 LDLIBS     += -lasdk 
-CPPFLAGS   += -DDEFORMABLE_MIRROR
+# CPPFLAGS   += -DDEFORMABLE_MIRROR
 
 
 OBJS := src/video-main.o src/gl-main.o src/deformable_mirror.o src/dm-control.o src/gettime.o src/writematlab.o src/text_helper.o

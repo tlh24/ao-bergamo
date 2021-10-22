@@ -141,3 +141,41 @@ The DM most definitely responds within one SHWFS frame.  No problem!
 In fact, I think there was a bug in the control code that was slowing things down... 
 For speed purposes, might want to reconsider the pipeline / move the optimization to the scanimage computer and simply remote control the DM? 
 
+
+October 22 2021
+
+Ok, observations: 
+1 -- The geneopt is able to recover when a 'hidden' corrupting wavefront / modulation is written to the DM based on in-vivo imaging. 
+Just tested this for superficial, will test again at depth. 
+2 -- Running the current geneop in-vivo results in an image that is NOT as bright as the result of optimizing in vitro.  relative scaling is 506 / 288, roughly. 
+But, I will try again on a smaller bead area. 
+Yes, the result holds -- 204 to about 180.  So the optimized result is slightly dimmer, consistent with noise entering the evaluation system. 
+(Note that the best flat wavefront was averaged over many trials; it is not just a running average, as you get with the GA. )
+3 -- trying 'hidden' recovery with a bright clump of beads at 290um depth.  11% laser power. 
+Increased frame averaging (median) to 8 from 6. 
+Population size remains 25 (which might need to increase with the larger dimensionality of the search space..). 
+It does work .. maybe imperfectly? 
+No, it works, it's just rather slow.  Improved the brightness by 4x on a second try. 
+4 -- Same thing, 442um deep, 43% laser power, 5x zoom, hidden variable aberration. 
+Yes, this definitely worked. 
+5 -- Alright, now the real test.  5x zoom, 55% power, 558um deep. 
+No hidden variable aberration -- can we fix the sample aberrations? 
+(starttemp = 0.37 / endtemp = 0.07, modes 4-86 being optimized). 
+It worked slightly!  But then, it bleached.  
+6 -- Try again, with hidden variable aberration (only 20 modes this time). 
+Yeah, it recovers the image ... only about 50% though. 
+7 -- Try this experiment again with another spot, 577um deep. 
+stil 65% power. 
+Yes, it was able to correct the image, again only about 50% .. 
+8 -- Ok, last try!  No hidden aberrations. 
+65% power, 577um deep. 
+population size increased to 50. 
+N increased to 40k. 
+same frame averaging of 9 .
+No, it failed. Did not work at all .. .humm, maybe too low SNR? 
+Seems like it bleached pretty bad.. 
+9 -- Same setup, 507um deep, near a vessel (?)
+46% power. Very bright image, 2000 scanimage scaling. 
+4x zoom.. 
+Issue: no water! 
+Must chec more frequently! Now I'm not sure if that result was from correcting for the lack of water or correcting for sample aberrations.. 

@@ -317,7 +317,7 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 	}
 	gsl_matrix_set(A, g_activeCentroids*2, 0, 1.0); 
 	
-	gsl_blas_dgemm(CBT, CBNT, -0.4, g_cforward, A, 0.99, g_dmcommand);
+	gsl_blas_dgemm(CBT, CBNT, -0.3, g_cforward, A, 0.99, g_dmcommand);
 	
 	for(int i=0; i<97; i++){
 		double x = gsl_matrix_get(g_dmcommand, i, 0); 
