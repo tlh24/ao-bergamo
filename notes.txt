@@ -179,3 +179,14 @@ Seems like it bleached pretty bad..
 4x zoom.. 
 Issue: no water! 
 Must chec more frequently! Now I'm not sure if that result was from correcting for the lack of water or correcting for sample aberrations.. 
+
+October 23 2021
+1 -- Trying again -- black labeled mouse. 
+Certain that there is immersion water this time. 
+focusing on a small bead clump, 451um deep, 55% power, 5x zoom, 300 x 512. 
+Same also as yesterday. 
+No apparent change in brightness. 
+2 -- let's see if we can replicate yesterday with loss of immersion water. 
+Ok, looks like 600um deep.  right. 
+38% laser power. same zoom. 
+Yep, the AO can convert an immersion objective to an air objective (imperfectly, but still). 
