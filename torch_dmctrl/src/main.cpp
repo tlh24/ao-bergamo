@@ -236,10 +236,20 @@ int main(int argc, const char* argv[]) {
 					}
 					dm_remove_ptt( data ); 
 					dm.Send( data );
-					torch::Tensor pt = torch::zeros({1, 97}); 
-					pt.index_put_({ 0, Slice()}, dmctrl); 
 // 				std::cout << dmctrl << std::endl; 
 					std::cout << "computation " << (comp - sta)*1000.0 << " ms "; 
+					std::cout << "total " << (gettime() - sta)*1000.0 << " ms\n"; 
+				}
+				if(check > 2.718 && check < 2.719){
+					long double sta = gettime(); 
+					for(int i=0; i<97; i++){
+						float a = g_cmdt[i+1] * 0.15; 
+						if(a > 0.15) a = 0.15; 
+						if(a <-0.15) a = -0.15; 
+						data[i] = a; 
+					}
+					dm_remove_ptt( data ); 
+					dm.Send( data );
 					std::cout << "total " << (gettime() - sta)*1000.0 << " ms\n"; 
 				}
 			}

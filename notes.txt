@@ -190,3 +190,20 @@ No apparent change in brightness.
 Ok, looks like 600um deep.  right. 
 38% laser power. same zoom. 
 Yep, the AO can convert an immersion objective to an air objective (imperfectly, but still). 
+
+October 26 2021
+
+Trying out the zonal optimization -- topology-aware recombination. 
+1 -- Starting from zero wavefront definitely works!
+2 -- Starting from Best_DMcommand also increases the brightness in a small group of beads from ~4.25 to ~6 (arb units). 
+Power is 14% of 1871mw, depth is 231um.  
+3 -- Power 60% zoom 5 (as above), depth 469um. 
+Very little improvement in image quality. 
+Actually, It looks like the image got worse vs Best_DMcommand from geneopt! Shoot. 
+4 -- Again power 60% zoom 5, depth 397um. did get an increase in brightness! 
+173 to 245, thats 41% 
+This was a well-labeled spot, though. 
+5 -- 50% power, depth 346um, zoom still 5. increase from 5-6 (~20%).  not bad I guess.  Sure wish there was a faster optimization algorithm! 
+Also need to start saving the data logs from this! 
+
+I generally think that the modal optimization is much faster for low-order aberrations (e.g. when the immersion water disappears), whereas the zonal per-actuator optimization works better in practice in vivo. 
