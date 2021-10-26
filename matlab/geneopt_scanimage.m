@@ -13,7 +13,7 @@ for idx = 1:length(channels)
 % 		st = std(std(frm)); 
 % 		genop.avstd = 0.99 * genop.avstd + 0.01 * st; 
 % 		msk = frm > mn + 0.5*genop.avstd; 
-% 		vd = sum(sum((frm .* msk)));   
+% 		vd = sum(sum(frm));   
 		vd = sum(sum(frm .* genop.mask')); 
     end   
 end
@@ -70,14 +70,16 @@ end
 mother = genop.DMcommandHist(:,pick2); 
 recomb = randn(97, 1); 
 % recomb = zeros(97, 1); % removing recombination strongly affects convergence. 
-kid = father .* (recomb > 0) + mother .* (recomb < 0); 
-noise = (randn(97,1)*temperature) .* (rand(97, 1) > 0.8);
-noise = noise .* [zeros(3,1); ones(27, 1); zeros(67, 1)]; 
+recomb = (rand(1)-0.5) * 2*pi; 
+kid = father .* (genop.dmangle > recomb) + mother .* (genop.dmangle <= recomb); 
+% kid = father .* (recomb > 0) + mother .* (recomb < 0); 
+noise = (randn(97,1)*temperature) .* (rand(97, 1) > 0.85);
+tax = 0; 
+% noise = zeros(97, 1); 
+% tax = mod(floor(k/200), 27)+3; 
+% tax = floor(rand(1) * 82)+4;  
+% noise(tax) = randn(1)*temperature; 
 
-noise = zeros(97, 1); 
-tax = mod(floor(k/200), 27)+3; 
-tax = floor(rand(1) * 82)+4;  
-noise(tax) = randn(1)*temperature; 
 genop.DMcommand = reshape(kid+noise, 97, 1); 
 
 % tcmd = zeros(97, 1); 
@@ -85,7 +87,7 @@ genop.DMcommand = reshape(kid+noise, 97, 1);
 % tcmd(tax) = 4*sin(k/10);
 % genop.udps(single([3.1415926; zeros(97,1)])); 
 % genop.udps(single([3.1415926; DMcommand_save])); 
-genop.udps(single([3.1415926; genop.DMcommand + genop.hidden]));
+genop.udps(single([2.7182818; genop.DMcommand + genop.hidden]));
 
 s = sprintf('%1.5e %1.5e %1.5e %1.5e %1.5e', ...
 	genop.DMcommandVd(1), mean(genop.DMcommandVd), temperature, vd, tax); % display the best one. 
