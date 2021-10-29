@@ -306,7 +306,7 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 	}
 	sx /= (double)g_activeCentroids; 
 	sy /= (double)g_activeCentroids; 
-	printf("sx sy %f %f\n", sx, sy); 
+	// printf("sx sy %f %f\n", sx, sy); 
 	// and combine with the desired dx and dy to get 'A'
 	gsl_matrix* A = gsl_matrix_alloc(g_activeCentroids*2+1, 1); 
 	for(int i=0; i<g_activeCentroids; i++){
