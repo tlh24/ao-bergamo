@@ -4,7 +4,7 @@ global cm;
 
 cm.nVar=97;                % Number of Unknown (Decision) Variables
 
-cm.VarSize=[1 nVar];       % Decision Variables Matrix Size
+cm.VarSize=[1 cm.nVar];       % Decision Variables Matrix Size
 
 cm.VarMin=-10;             % Lower Bound of Decision Variables
 cm.VarMax= 10;             % Upper Bound of Decision Variables
@@ -14,10 +14,10 @@ cm.VarMax= 10;             % Upper Bound of Decision Variables
 cm.MaxIt=2000;
 
 % Population Size (and Number of Offsprings)
-cm.lambda=(4+round(3*log(nVar)))*10;
+cm.lambda=(4+round(3*log(cm.nVar)))*10;
 
 % Number of Parents
-cm.mu=round(lambda/2);
+cm.mu=round(cm.lambda/2);
 
 % Parent Weights
 % default is log-distributed; we might want something else, given the noise
@@ -43,27 +43,27 @@ cm.cmu = min(1-cm.c1, alpha_mu * (cm.mu_eff - 2 + 1/cm.mu_eff) / ((cm.nVar + 2)^
 cm.hth = (1.4+2/(cm.nVar+1)) * cm.ENN;
 
 
-cm.ps = cell(MaxIt,1);
-cm.pc = cell(MaxIt,1);
-cm.C = cell(MaxIt,1);
-cm.sigma = cell(MaxIt,1);
+cm.ps = cell(cm.MaxIt,1);
+cm.pc = cell(cm.MaxIt,1);
+cm.C = cell(cm.MaxIt,1);
+cm.sigma = cell(cm.MaxIt,1);
 
-cm.ps{1} = zeros(VarSize);
-cm.pc{1} = zeros(VarSize);
-cm.C{1} = eye(nVar);
-cm.sigma{1} = sigma0;
+cm.ps{1} = zeros(cm.VarSize);
+cm.pc{1} = zeros(cm.VarSize);
+cm.C{1} = eye(cm.nVar);
+cm.sigma{1} = cm.sigma0;
 
 cm.empty_individual.Position = [];
 cm.empty_individual.Step = [];
 cm.empty_individual.Cost = [];
 
-cm.M = repmat(empty_individual,MaxIt,1);
-cm.M(1).Position = unifrnd(VarMin,VarMax,VarSize);
-cm.M(1).Step = zeros(VarSize);
-cm.M(1).Cost = CostFunction(M(1).Position);
+cm.M = repmat(cm.empty_individual, cm.MaxIt,1);
+cm.M(1).Position = unifrnd(cm.VarMin, cm.VarMax, cm.VarSize);
+cm.M(1).Step = zeros(cm.VarSize);
+cm.M(1).Cost = 1e6;
 
-cm.BestSol = M(1);
+cm.BestSol = cm.M(1);
 
-cm.BestCost = zeros(MaxIt,1);
+cm.BestCost = zeros(cm.MaxIt, 1);
 
 cm.g = 0; % iteration number. 

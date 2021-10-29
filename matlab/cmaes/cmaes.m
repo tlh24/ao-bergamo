@@ -11,15 +11,15 @@
 % Contact Info: sm.kalami@gmail.com, info@yarpiz.com
 %
 
-clc;
-clear;
-close all;
+% clc;
+% clear;
+% close all;
 
 %% Problem Settings
 
 CostFunction=@Ackley;   % Cost Function
 
-nVar=10;                % Number of Unknown (Decision) Variables
+nVar=97;                % Number of Unknown (Decision) Variables
 
 VarSize=[1 nVar];       % Decision Variables Matrix Size
 
@@ -29,7 +29,7 @@ VarMax= 10;             % Upper Bound of Decision Variables
 %% CMA-ES Settings
 
 % Maximum Number of Iterations
-MaxIt=300;
+MaxIt=2000;
 
 % Population Size (and Number of Offsprings)
 lambda=(4+round(3*log(nVar)))*10;

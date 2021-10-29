@@ -8,11 +8,9 @@ global cm;
 
 g = cm.g; 
 
-if g > 0
-	cm.pop.Costs = Costs; % will this work? 
+if g > 0 && g <= cm.MaxIt
 	for i = 1:cm.lambda
 		cm.pop(i).Cost = Costs(i); 
-		% Update Best Solution Ever Found
 		if Costs(i) < cm.BestSol.Cost
 			cm.BestSol=cm.pop(i);
 		end
@@ -31,9 +29,9 @@ if g > 0
 	% Update Mean
 	cm.M(g+1).Step = 0;
 	for j=1:cm.mu
-		cm.M(g+1).Step = cm.M(g+1).Step + cm.w(j)*pop(j).Step;
+		cm.M(g+1).Step = cm.M(g+1).Step + cm.w(j) * cm.pop(j).Step;
 	end
-	cm.M(g+1).Position = cm.M(g).Position+sigma{g} * cm.M(g+1).Step;
+	cm.M(g+1).Position = cm.M(g).Position + cm.sigma{g} * cm.M(g+1).Step;
 
 	% Update Step Size
 	cm.ps{g+1} = (1-cm.cs) * cm.ps{g} + ...
@@ -71,10 +69,17 @@ g = g+1;
 % clear the population. 
 cm.pop=repmat(cm.empty_individual,cm.lambda,1);
 
-% sample from the evaluation function
-cm.pop(i).Step = mvnrnd(zeros(cm.VarSize), cm.C{g});
-cm.pop(i).Position = cm.M(g).Position + cm.sigma{g} * cm.pop(i).Step;
-samples = cm.pop.Position; 
+% make new samples
+% first one is just the mean
+cm.pop(1).Step = zeros(cm.VarSize);
+cm.pop(1).Position = cm.M(g).Position;
+samples(1, :) = cm.pop(1).Position;
+% now vary things
+for i = 2:cm.lambda
+	cm.pop(i).Step = mvnrnd(zeros(cm.VarSize), cm.C{g});
+	cm.pop(i).Position = cm.M(g).Position + cm.sigma{g} * cm.pop(i).Step;
+	samples(i, :) = cm.pop(i).Position; 
+end
 
 cm.g = g;
 
