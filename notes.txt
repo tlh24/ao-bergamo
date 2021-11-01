@@ -207,3 +207,14 @@ This was a well-labeled spot, though.
 Also need to start saving the data logs from this! 
 
 I generally think that the modal optimization is much faster for low-order aberrations (e.g. when the immersion water disappears), whereas the zonal per-actuator optimization works better in practice in vivo. 
+
+November 1 2021
+
+Black-marked muouse. 
+1 -- Using geneopt, 5x zoom, 44% power, 274um deep. 
+No clear improvement of brightness -- but there is an improvement in resolution? 
+Had to change the variance on the geneopt from 0.07 and 0.015 to 0.04 and 0.01. 
+Saved the wavefront image. 
+2 -- 49% power, 293um deep, 
+3 -- 65% power, 470um deep, didn't work, too dim. 
+4 -- 278um deep, 50% power, no appreciable increase in brightness. WAvefront saved. 
