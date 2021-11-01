@@ -104,6 +104,7 @@ end
 if mod(k,700) == 699
 	% nuke it b/c of bleaching..
 	genop.DMcommandVd = zeros(1, genop.npop);
+	genop.DMcommand_save = mean(genop.DMcommandHist, 2); 
 end
 % note: 
 % if everything is behaving well (disconneted from internet, e.g), then

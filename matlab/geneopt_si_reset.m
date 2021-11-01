@@ -16,7 +16,9 @@ genop.save_time = single(zeros(N, 1));
 
 load('calibration_960nm_PSbeads_long4_geneopt.mat','Best_DMcommand') 
 
+% genop.DMcommand = zeros(97,1); 
 genop.DMcommand = Best_DMcommand';
+genop.Best_DMcommand = Best_DMcommand'; 
 genop.DMcommandHist = repmat(genop.DMcommand, 1, genop.npop); 
 genop.DMcommandVd = zeros(1, genop.npop);
 genop.DMcommandK = zeros(1, genop.npop);
@@ -26,8 +28,8 @@ if 0
 end
 % genop.starttemp = 0.37; % modal
 % genop.endtemp = 0.07; % modal
-genop.starttemp = 0.07; % zonal
-genop.endtemp = 0.015; % zonal
+genop.starttemp = 0.04; % zonal
+genop.endtemp = 0.01; % zonal
 genop.temperatures = linspace(genop.starttemp, genop.endtemp, N); 
 genop.k = 0; 
 genop.vs = 0;

@@ -6,8 +6,8 @@ cm.nVar=97;                % Number of Unknown (Decision) Variables
 
 cm.VarSize=[1 cm.nVar];       % Decision Variables Matrix Size
 
-cm.VarMin=-10;             % Lower Bound of Decision Variables
-cm.VarMax= 10;             % Upper Bound of Decision Variables
+cm.VarMin=-0.05;             % Lower Bound of Decision Variables
+cm.VarMax= 0.05;             % Upper Bound of Decision Variables
 
 
 % Maximum Number of Iterations
@@ -23,7 +23,7 @@ cm.mu=round(cm.lambda/2);
 % default is log-distributed; we might want something else, given the noise
 % in the evaluations.
 cm.w = log(cm.mu+0.5)-log(1:cm.mu); 
-cm.w = (cm.mu - (1:cm.mu)).^3; 
+cm.w = (cm.mu - (1:cm.mu)).^3.5; 
 cm.w = cm.w/sum(cm.w);
 
 % Number of Effective Solutions
@@ -59,6 +59,7 @@ cm.empty_individual.Cost = [];
 
 cm.M = repmat(cm.empty_individual, cm.MaxIt,1);
 cm.M(1).Position = unifrnd(cm.VarMin, cm.VarMax, cm.VarSize);
+cm.M(1).Position = randn(cm.VarSize) * 0.01; % custom!! 
 cm.M(1).Step = zeros(cm.VarSize);
 cm.M(1).Cost = 1e6;
 
