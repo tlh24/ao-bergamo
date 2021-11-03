@@ -126,8 +126,8 @@ float g_svd_uival[10]; // slider control values, [-1 .. 1].
 
 int init_resources() {
 	/* Initialize the FreeType2 library */
-	printf("init text stuff \n");
-	init_text_helper(g_vao, g_vbo[6]);
+// 	printf("init text stuff \n");
+// 	init_text_helper(g_vao, g_vbo[6]);
 	return 1;
 }
 
