@@ -99,3 +99,4 @@ xlabel('centroid X position, um');
 ylabel('centroid Y position, um');
 view(2)
 set(gcf, 'Position',  [100, 100, 700, 650])
+title(['waefront for ' titl])

@@ -1,7 +1,7 @@
 %%--- 
 load('../data/calibration_flat.mat');
 load('../data/calibration_forward.mat'); % valid lenslets in the actual microscope
-load('../data/calibration_950nm_1_geneopt.mat');
+load('../data/calibration_960nm_20211105_geneopt.mat');
 nlenslets = sum(mask);
 % this is confusing, i know. 
 % 'mask' from calibration_flat, converts from all possible 3k centroids to

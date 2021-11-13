@@ -27,7 +27,7 @@
 
 load('../data/calibration_forward.mat'); % forward, mx, my
 % load('../data/calibration_flat.mat'); % calib
-fname = '960nm_mouse4';
+fname = '960nm_20211113';
 load(['../rundata/DMoptimization_' fname '.mat']); 
 nc = numel(mx); 
 
@@ -76,12 +76,14 @@ plot(pred)
 
 % % try SVD implicitly weighted based on GA optim. 
 [U, S, V] = svd(wf, 'econ'); 
-for i = 20:-1:1
-	vx = V(1:nc, i); 
-	vy = V(nc+1:2*nc, i); 
-	wavefront_plot_circles(mx, my, vx, vy, ...
-		['GA svd component ' num2str(i)]); 
-	set(gcf, 'Position',  [100, 100, 1500, 750])
+if 0
+	for i = 5:-1:1
+		vx = V(1:nc, i); 
+		vy = V(nc+1:2*nc, i); 
+		wavefront_plot_circles(mx, my, vx, vy, ...
+			['GA svd component ' num2str(i)]); 
+		set(gcf, 'Position',  [100, 100, 1500, 750])
+	end
 end
 
 % do SVD implicitly weighted based on GA optim & 
@@ -116,10 +118,10 @@ subplot(1,3,3);
 scatter3(best_wfs_x, best_wfs_y, coef(1:nc)/1e5, 'o'); 
 title('coefficients of intensity regression vs. wf centroid'); 
 
-% look at the deviation of this wavefront vs original.
-genecalib_orig = genecalib; 
-load('../data/calibration_960nm_PSbeads_long4_geneopt.mat');
-genecalib_long4 = genecalib;
-wavefront_plot_circles(best_wfs_x, best_wfs_y, ...
-	genecalib_orig(:,1) - genecalib_long4(:,1), ...
-	genecalib(:,2) - genecalib_long4(:,2),'update')
+% % look at the deviation of this wavefront vs original.
+% genecalib_orig = genecalib; 
+%load('../data/calibration_960nm_PSbeads_long4_geneopt.mat');
+mechanicalflat = [mx my];
+wavefront_plot_circles(mx, my, ...
+	genecalib(:,1) - mx, ...
+	genecalib(:,2) - my,'genecalib ref. to mechanical flat')

@@ -14,35 +14,35 @@
 #include <gdk/gdk.h>
 #include "globals.h"
 
-#define geneopt_num 12
+#define geneopt_num 1
 
 const char* geneopt_fnames[] = {
-	"data/calibration_950nm_1_geneopt.mat",
-	"data/calibration_950nm_2_geneopt.mat", 
-	"data/calibration_960nm_PSbeads_1_geneopt.mat", 
-	"data/calibration_960nm_PSbeads_long4_geneopt.mat",
-	"data/calibration_960nm_Retrobeads_1_geneopt.mat", 
-	"data/calibration_960nm_300um_1_geneopt.mat", 
-	"data/calibration_960nm_500um_1_geneopt.mat", 
-	"data/calibration_1010nm_4nmAu_1_geneopt.mat", 
-	"data/calibration_1020nm_1_geneopt.mat", 
-	"data/calibration_1020nm_2_geneopt.mat", 
-	"data/calibration_1080nm_orangePSbeads_long1_geneopt.mat", 
-	"data/calibration_960nm_mouse4_geneopt.mat"
+	"data/calibration_960nm_20211105_geneopt.mat"
+// 	"data/calibration_950nm_2_geneopt.mat", 
+// 	"data/calibration_960nm_PSbeads_1_geneopt.mat", 
+// 	"data/calibration_960nm_PSbeads_long4_geneopt.mat",
+// 	"data/calibration_960nm_Retrobeads_1_geneopt.mat", 
+// 	"data/calibration_960nm_300um_1_geneopt.mat", 
+// 	"data/calibration_960nm_500um_1_geneopt.mat", 
+// 	"data/calibration_1010nm_4nmAu_1_geneopt.mat", 
+// 	"data/calibration_1020nm_1_geneopt.mat", 
+// 	"data/calibration_1020nm_2_geneopt.mat", 
+// 	"data/calibration_1080nm_orangePSbeads_long1_geneopt.mat", 
+// 	"data/calibration_960nm_mouse4_geneopt.mat"
 };
 const char* geneopt_names[] = {
-	"950nm #1",
-	"950nm #2",
-	"960nm PSbeads", 
-	"960nm PSbeads SVD",
-	"960nm Retrobeads", 
-	"960nm 300um", 
-	"960nm 500um", 
-	"1010nm 4nm Au",
-	"1020nm #1",
-	"1020nm #2",
-	"1080nm Orange PSbeads", 
-	"960nm mouse4"
+	"960nm #1"
+// 	"950nm #2",
+// 	"960nm PSbeads", 
+// 	"960nm PSbeads SVD",
+// 	"960nm Retrobeads", 
+// 	"960nm 300um", 
+// 	"960nm 500um", 
+// 	"1010nm 4nm Au",
+// 	"1020nm #1",
+// 	"1020nm #2",
+// 	"1080nm Orange PSbeads", 
+// 	"960nm mouse4"
 };
 
 unsigned char g_cmask[3000]; 
@@ -349,7 +349,7 @@ void dm_rand_stim(float* command)
 		double r = distribution(generator); 
 		gsl_matrix_set(rz, i, 0, r); 
 	}
-	gsl_blas_dgemm(CBNT, CBNT, 1.0, g_dmZ, rz, 0.022, g_dmcommand); 
+	gsl_blas_dgemm(CBNT, CBNT, 1.0, g_dmZ, rz, 0.022, g_dmcommand); //was 0.022 !!
 	
 	for(int i=0; i<97; i++){
 		double x = gsl_matrix_get(g_dmcommand, i, 0); 

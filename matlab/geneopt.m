@@ -1,8 +1,8 @@
 % udpr = dsp.UDPReceiver('LocalIPPort', 31313,...
 % 	'MessageDataType','double'); 
 tic; 
-N = 15e3; 
-NN = N*1;
+N = 20e3; 
+NN = N*10;
 bleach_correct = 5000; 
 
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
@@ -35,7 +35,7 @@ endtemp = 0.002;
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
 
-load('../data/calibration_960nm_PSbeads_long4_geneopt.mat', ...
+load('../data/calibration_960nm_20211113_geneopt.mat', ...
 	'Best_DMcommand'); 
 
 sock = tcpip('0.0.0.0', 18080, 'NetworkRole', 'server');
@@ -46,9 +46,9 @@ datarx = fread(sock, 3, 'double');
 while k < NN
 	% periodically reset the algorithm, 
 	% to get new draws from the optimization distro. 
-	if 0
+	if 1
 		if mod(k, N) == 1
-			if 0
+			if 1
 				DMcommand = Best_DMcommand'; 
 			else
 				DMcommand = zeros(97, 1); 
@@ -166,7 +166,7 @@ while k < NN
 	k = k + 1; 
 end
 	
-fname = ['../rundata/DMoptimization_960nm_mouse6.mat']
+fname = ['../rundata/DMoptimization_960nm_20211113_mouse1.mat']
 save(fname, '-v7.3', 'save_*');
 
 fclose(sock); 

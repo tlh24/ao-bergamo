@@ -210,11 +210,48 @@ I generally think that the modal optimization is much faster for low-order aberr
 
 November 1 2021
 
-Black-marked muouse. 
+Black-marked mouse. 
 1 -- Using geneopt, 5x zoom, 44% power, 274um deep. 
 No clear improvement of brightness -- but there is an improvement in resolution? 
 Had to change the variance on the geneopt from 0.07 and 0.015 to 0.04 and 0.01. 
 Saved the wavefront image. 
 2 -- 49% power, 293um deep, 
 3 -- 65% power, 470um deep, didn't work, too dim. 
-4 -- 278um deep, 50% power, no appreciable increase in brightness. WAvefront saved. 
+4 -- 278um deep, 50% power, no appreciable increase in brightness. Wavefront saved. 
+
+
+November 13 2021
+
+Ok, November 5th, otally re-aligned the microscope, improved the quality of the WF image (536 centroids consistently viewable), and re-rand geneopt.  
+The result is in rundata/DMoptimization_960nm_20211105.mat. 
+It's a complete run -- the objective didn't run out of water. 
+But it looks the same as other runs... 
+
+Fast-forward to the present (13th), I've replacd the 400mm / 300mm custom tube lens (efl 171mm) with a 400 / 400 lens (efl 200mm).  This should make the DM 'pretty close' to conjugate to the objective pupil plane / 'back focal plane' as Olympis  calls it.  
+Of course, then the problem is that 
+1 -- The magnification is different
+2 -- The size of the pupil plane is correspondingly larger.  (This is because the system was designed for the olympus objective, entrance pupil of ~ 18mm)
+3 -- The system is no longer in 4f configuration, because the tube lens is too close to the DM relay TL200-2p2. 
+4 -- The wavefront sensor is off, because it's conjugate plane is in the wrong position as well.  Practically speaking, the wavefront isn't even close to flat, so the flat-calibrated centroids don't work well. 
+5 -- The window-levelling optics need to be changed as well. 
+
+Because of these differences, and to hopefully get the objective pupil better conjugated to the DM, I switched over to the Nikon 16x 0.8NA from the Olympus 20x 1.0NA.  The Nikon has a BFP 37.4mm from the objective shoulder, whereas the Olympus is 48.1mm from the shoulder. 
+
+I was hoping that this would change things, but the results of the geneopt run (which was incomplete -- objective ran out of water after 5 replicates) seems very similar to runs with the Olympus objective. I am pretty sure, at this point, that the conjugate plane moved, judging from the image when the scanners are on vs off. 
+But I really should check.. 
+Yes, the scanner is conjugate to the DM, which is conjjugate to a plane ~ 30mm below the PMT arm (really should be 37 - 48mm below!  Yet, this is beter than what it was.. )
+
+Of note: observed the same field-dependent modulattion of brightness by the DM during optimization as before; this effect does not seem to be abrogated by a better alignment of the DM to the objective pupipl plane. 
+The AO does seem to get more light out, however.. 
+See file doc/20211113 - 16x conjugated vs 20x less conjugated.png
+
+Question is: will it work better in mice?? 
+Answer: yes!  it definitely seems to be working better - 
+Got a 68% improvement in image brightness compared to system correction. 
+This is one sample, at 450um deeo (see data file for 20211113), 
+but still it's promising.  
+
+(Of note: I think the optimization got the wavefront correction relatively early (??) though save_sumstd just shows bleaching & the laser power adjustment.) 
+
+I really think I need to go back and re-engineer the whole system for a very accurate conjugation to the pupil plane of the objectives. 
+Then, maybe, everything will work. 
