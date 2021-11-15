@@ -17,7 +17,7 @@
 #define geneopt_num 1
 
 const char* geneopt_fnames[] = {
-	"data/calibration_960nm_20211105_geneopt.mat"
+	"data/calibration_960nm_20211114_geneopt.mat"
 // 	"data/calibration_950nm_2_geneopt.mat", 
 // 	"data/calibration_960nm_PSbeads_1_geneopt.mat", 
 // 	"data/calibration_960nm_PSbeads_long4_geneopt.mat",

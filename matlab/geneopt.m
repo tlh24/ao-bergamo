@@ -166,7 +166,7 @@ while k < NN
 	k = k + 1; 
 end
 	
-fname = ['../rundata/DMoptimization_960nm_20211113_mouse1.mat']
+fname = ['../rundata/DMoptimization_960nm_20211114.mat']
 save(fname, '-v7.3', 'save_*');
 
 fclose(sock); 

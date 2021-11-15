@@ -27,7 +27,7 @@
 
 load('../data/calibration_forward.mat'); % forward, mx, my
 % load('../data/calibration_flat.mat'); % calib
-fname = '960nm_20211113';
+fname = '960nm_20211114';
 load(['../rundata/DMoptimization_' fname '.mat']); 
 nc = numel(mx); 
 

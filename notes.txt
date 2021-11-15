@@ -241,7 +241,7 @@ I was hoping that this would change things, but the results of the geneopt run (
 But I really should check.. 
 Yes, the scanner is conjugate to the DM, which is conjjugate to a plane ~ 30mm below the PMT arm (really should be 37 - 48mm below!  Yet, this is beter than what it was.. )
 
-Of note: observed the same field-dependent modulattion of brightness by the DM during optimization as before; this effect does not seem to be abrogated by a better alignment of the DM to the objective pupipl plane. 
+Of note: observed the same field-dependent modulattion of brightness by the DM during optimization as before; this effect does not seem to be abrogated by a better alignment of the DM to the objective pupil plane. 
 The AO does seem to get more light out, however.. 
 See file doc/20211113 - 16x conjugated vs 20x less conjugated.png
 
