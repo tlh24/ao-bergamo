@@ -255,3 +255,23 @@ but still it's promising.
 
 I really think I need to go back and re-engineer the whole system for a very accurate conjugation to the pupil plane of the objectives. 
 Then, maybe, everything will work. 
+
+
+Nov 17 2021
+
+Notes from meeting with Na Ji: 
+-- with a 1.0NA 20x objective and 1um beads, the FWHM of the PSF should be around 2um axial, not 3.5um. 
+-- Probably the DM optimization is incomplete or too slow.  
+--- Go back and re-optimize; should be able to get much better. 
+-- Definitely need to check the PSF carefully!  (The lack of a fast Z stage may impact this slightly.. )
+-- Once everything is aligned, go and check again that the system can correct aberrations written to the DM. 
+--- It's OK if the coefficients are different -- this just means that the beam is not prefectly centered, which is usual (but do try to improve the centration..)
+-- Hill-clmibing is slow, suggets using Martin booth's quadratic fit to a line search (she balked at the idea that it was line search... but it is). 
+-- Field dependence of image intensity is probably due to aberrrations somewhere in the optical system. 
+--- This is consistent with the large magnitude of the system correction. 
+(from Anderson) Try putting COOH beads on PDL slides.  They should stick.  Keep the coverslip out of it. 
+-- Again, do modal correction first -- the fact that it did not seem to work well suggests that centration can be impoved (how to measure & correct this?  Another lens somewhere? 
+-- Modal correction 'does work', try again. 
+-- Having the conjugate planes slightly off between the DM and the objective is OK, less than 1cm should be fine.  (we were off by more than 4cm!). 
+
+Overall, her descrition / interaction suggested that there are no hidden or occult variables that I've been simply unaware of; more that the objective does need to be moved, and more effort put on being analytical.  
