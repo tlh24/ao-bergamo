@@ -14,10 +14,11 @@
 #include <gdk/gdk.h>
 #include "globals.h"
 
-#define geneopt_num 1
+#define geneopt_num 2
 
 const char* geneopt_fnames[] = {
-	"data/calibration_960nm_20211114_geneopt.mat"
+	"data/calibration_950nm_20220210_geneopt.mat",
+	"data/calibration_950nm_20220211_geneopt.mat"
 // 	"data/calibration_950nm_2_geneopt.mat", 
 // 	"data/calibration_960nm_PSbeads_1_geneopt.mat", 
 // 	"data/calibration_960nm_PSbeads_long4_geneopt.mat",
@@ -31,7 +32,8 @@ const char* geneopt_fnames[] = {
 // 	"data/calibration_960nm_mouse4_geneopt.mat"
 };
 const char* geneopt_names[] = {
-	"960nm #1"
+	"950nm #1",
+	"950nm #2"
 // 	"950nm #2",
 // 	"960nm PSbeads", 
 // 	"960nm PSbeads SVD",
