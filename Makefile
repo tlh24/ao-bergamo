@@ -10,6 +10,7 @@ LDFLAGS    := $(shell $(PYLON_ROOT)/bin/pylon-config --libs-rpath)
 LDLIBS     := $(shell $(PYLON_ROOT)/bin/pylon-config --libs) 
 LDLIBS     += $(shell pkg-config --libs $(GLIBS))
 LDLIBS     += -lpng -lrt -lmatio -lpthread -lGL -lGLEW -lgsl -lgslcblas -lfreetype 
+LDFLAGS    += -L./AlpaoLib/Linux/x64/
 LDLIBS     += -lasdk 
 CPPFLAGS   += -DDEFORMABLE_MIRROR
 

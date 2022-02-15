@@ -96,11 +96,11 @@ imagesc(v', [-0.12 0.12]);
 title('DM command signal')
 colorbar; 
 subplot(1,3,2); 
-imagesc(err, [-0.012 0.012]); 
+imagesc(err2, [-0.012 0.012]); 
 title('DM command pred error')
 colorbar;
 subplot(1,3,3); 
-imagesc(pred, [-0.12 0.12]); 
+imagesc(pred2, [-0.12 0.12]); 
 title('DM pred')
 colorbar;
 

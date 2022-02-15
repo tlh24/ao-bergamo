@@ -1,6 +1,6 @@
 load('../data/calibration_forward.mat'); 
 load('../data/calibration_flat.mat'); 
-fname = '960nm_PSbeads_11';
+fname = '950nm_20220211';
 load(['../rundata/DMoptimization_' fname '.mat']); 
 % I think the 1225 run might be bad... 
 % low SNR on the NV ND, and relatively rapid bleaching. 
@@ -12,25 +12,31 @@ load(['../rundata/DMoptimization_' fname '.mat']);
 % the latter is assumed to be 'flat'; 
 % modifications are made from it
 
+nlenslets = sum(cmask); 
 figure; 
 frames_sum = sum(save_sumstd(:, 2:10), 2); 
 plot(frames_sum); 
 
-nlenslets = sum(cmask); 
-sta = 12000;
-N = size(save_dmcommand, 1); 
-len = N-sta; 
-B = frames_sum(sta:end-1); % called 1 but really 10000
-A = [(0:len-1)' len*ones(len, 1)]; 
-c = A\B; 
-pred = A*c; 
-debleach = B-pred; 
-[~, indx] = sort(debleach(len-2000:end), 'descend'); % called 1 but really 4000 
-% hence called 4000 but really n + 3999 + 9999
-indx = indx(1:100) + sta + len - 2000 - 2; 
+if 0 
+	sta = 12000;
+	N = size(save_dmcommand, 1); 
+	len = N-sta; 
+	B = frames_sum(sta:N-1); % called 1 but really 10000
+	A = [(0:len-1)' len*ones(len, 1)]; 
+	c = A\B; 
+	pred = A*c; 
+	debleach = B-pred; 
+	[~, indx] = sort(debleach(len-2000:N), 'descend'); % called 1 but really 4000 
+	% hence called 4000 but really n + 3999 + 9999
+	indx = indx(1:100) + sta + len - 2000 - 2; 
+else
+	% some of these runs are crappy & have little / no bleaching. 
+	[~, indx] = sort(frames_sum(12000:39e3), 'descend');
+	indx = indx(1:200) + 12000 - 1; 
+end
 hold on; 
 plot(indx, frames_sum(indx), 'ro'); 
-plot([sta:N-1], pred, 'g'); 
+% plot([sta:N-1], pred, 'g'); 
 avg_wfs_x = mean(double(save_wfs_dx(indx, :)), 1)'; 
 avg_wfs_y = mean(double(save_wfs_dy(indx, :)), 1)'; 
 
@@ -54,7 +60,7 @@ title('average DM control signals for top solutions');
 
 Best_DMcommand = avg_dmcommand; 
 genecalib = [avg_wfs_x avg_wfs_y];
-if 0
+if 1
 save(['../data/calibration_' fname '_geneopt.mat'],'Best_DMcommand','genecalib'); 
 end
 % save the absolute centroid positions

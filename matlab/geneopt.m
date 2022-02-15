@@ -1,8 +1,8 @@
 % udpr = dsp.UDPReceiver('LocalIPPort', 31313,...
 % 	'MessageDataType','double'); 
 tic; 
-N = 20e3; 
-NN = N*10;
+N = 30e3; 
+NN = N*2;
 bleach_correct = 5000; 
 
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
@@ -35,8 +35,8 @@ endtemp = 0.002;
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
 
-load('../data/calibration_960nm_20211113_geneopt.mat', ...
-	'Best_DMcommand'); 
+% load('../data/calibration_960nm_20211113_geneopt.mat', ...
+% 	'Best_DMcommand'); 
 
 sock = tcpip('0.0.0.0', 18080, 'NetworkRole', 'server');
 disp('ok go.'); 
@@ -48,7 +48,7 @@ while k < NN
 	% to get new draws from the optimization distro. 
 	if 1
 		if mod(k, N) == 1
-			if 1
+			if 0
 				DMcommand = Best_DMcommand'; 
 			else
 				DMcommand = zeros(97, 1); 
@@ -166,7 +166,7 @@ while k < NN
 	k = k + 1; 
 end
 	
-fname = ['../rundata/DMoptimization_960nm_20211114.mat']
+fname = ['../rundata/DMoptimization_950nm_20220211.mat']
 save(fname, '-v7.3', 'save_*');
 
 fclose(sock); 
