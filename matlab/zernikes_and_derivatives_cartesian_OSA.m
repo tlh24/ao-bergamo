@@ -27,7 +27,7 @@
 %% @var{nan_zero} is a string that determines the values of polynomial 
 %% and derived values outside the radio unit circle.
 %%
-%% Strictly, the polynoms are only defined for 0 <= X²+Y² <= 1.
+%% Strictly, the polynomials are only defined for 0 <= X²+Y² <= 1.
 %% If variable @var{nan_zero} = 'nan', the values of the polynomials for which
 %% it is verified that (X²+Y²)>1 are set = NaN.
 %% If variable @var{nan_zero} = 'zero', the values of the polynomials for which

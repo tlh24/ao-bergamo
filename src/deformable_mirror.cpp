@@ -30,13 +30,13 @@ void* dmControl_thread(void* writeData)
 
 	// Get the number of actuators
 	UInt nbAct = (UInt) dm.Get( "NbOfActuator" );
+    cout << "Number of actuators: " << nbAct << endl;
 
 	// Check errors
 	if ( !dm.Check() ){
 		cout << "deformable mirror is not responding" << endl; 
 		return NULL;
 	}
-	cout << "Number of actuators: " << nbAct << endl;
 
 	// Initialize data
 	Scalar *data = new Scalar[nbAct];

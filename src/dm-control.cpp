@@ -14,12 +14,12 @@
 #include <gdk/gdk.h>
 #include "globals.h"
 
-#define geneopt_num 2
+#define geneopt_num 3
 
 const char* geneopt_fnames[] = {
-	"data/calibration_950nm_20220210_geneopt.mat",
-	"data/calibration_950nm_20220211_geneopt.mat"
-// 	"data/calibration_950nm_2_geneopt.mat", 
+	"data/calibration_960nm_20220217_geneopt.mat",
+	"data/calibration_1050nm_20220218_geneopt.mat",
+	"data/calibration_1200nm_20220218_geneopt.mat"
 // 	"data/calibration_960nm_PSbeads_1_geneopt.mat", 
 // 	"data/calibration_960nm_PSbeads_long4_geneopt.mat",
 // 	"data/calibration_960nm_Retrobeads_1_geneopt.mat", 
@@ -32,8 +32,10 @@ const char* geneopt_fnames[] = {
 // 	"data/calibration_960nm_mouse4_geneopt.mat"
 };
 const char* geneopt_names[] = {
-	"950nm #1",
-	"950nm #2"
+	"960nm #1", 
+	"1050nm #1", 
+	"1200nm #1"
+//	"970nm #1"
 // 	"950nm #2",
 // 	"960nm PSbeads", 
 // 	"960nm PSbeads SVD",
@@ -206,6 +208,17 @@ bool dm_control_init()
 	return true; 
 }
 
+void check_nan(gsl_matrix* a, const char* name){
+	int rows = a->size1; 
+	int cols = a->size2; 
+	for(int r=0; r<rows; r++){
+		for(int c=0; c<cols; c++){
+			if(isnan(gsl_matrix_get(a, r, c)))
+				printf("%s isnan at %d %d\n", name, r, c); 
+		}
+	}
+}
+
 void dm_control_run(float* zernike, int geneopt_active, float* command, float* svd_uival)
 // zernike is eg 36x1, can be NULL; command is eg 97x1.
 {
@@ -291,7 +304,11 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 		}
 	} else {
 		for(int i=0; i<g_nZernike; i++){
-			gsl_matrix_set(g_zcoef, i, 0, 0.0); 
+			if(i-1 >= 0 && i-1 < 10){
+				gsl_matrix_set(g_zcoef, i, 0, svd_uival[i-1]); // XXX hack
+			} else {
+				gsl_matrix_set(g_zcoef, i, 0, 0.0); 
+			}
 		}
 	}
 	gsl_matrix* desdx = gsl_matrix_alloc(g_activeCentroids, 1); 
@@ -306,6 +323,7 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 		sx += gsl_matrix_get(g_dat, i, 0); 
 		sy += gsl_matrix_get(g_dat, i, 1); 
 	}
+	// check_nan(g_dat, "g_dat @ 318"); 
 	sx /= (double)g_activeCentroids; 
 	sy /= (double)g_activeCentroids; 
 	// printf("sx sy %f %f\n", sx, sy); 
@@ -319,12 +337,12 @@ void dm_control_run(float* zernike, int geneopt_active, float* command, float* s
 	}
 	gsl_matrix_set(A, g_activeCentroids*2, 0, 1.0); 
 	
-	gsl_blas_dgemm(CBT, CBNT, -0.3, g_cforward, A, 0.99, g_dmcommand);
+	gsl_blas_dgemm(CBT, CBNT, -0.18, g_cforward, A, 0.99, g_dmcommand);
 	
 	for(int i=0; i<97; i++){
 		double x = gsl_matrix_get(g_dmcommand, i, 0); 
 		if(x > 0.15) x = 0.15; 
-		if(x<-0.15) x = -0.15; 
+		if(x <-0.15) x = -0.15; 
 		command[i] = x; 
 		//piston, tip and tilt will be removed on the other thread. 
 	}

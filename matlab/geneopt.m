@@ -2,7 +2,7 @@
 % 	'MessageDataType','double'); 
 tic; 
 N = 30e3; 
-NN = N*2;
+NN = N*10;
 bleach_correct = 5000; 
 
 mmf = memmapfile('../shared_centroids.dat','Format','single','Offset',0,'Repeat',6000);
@@ -30,13 +30,13 @@ dmctrl.Data = single(DMcommand);
 % end
 
 temperature = 0.01; 
-starttemp = 0.007; % start from zero DM command: 0.005
+starttemp = 0.005; % start from zero DM command: 0.007
 endtemp = 0.002; 
 temperatures = linspace(starttemp, endtemp, N); 
 k = 1; 
 
-% load('../data/calibration_960nm_20211113_geneopt.mat', ...
-% 	'Best_DMcommand'); 
+load('../data/calibration_960nm_20220215_geneopt.mat', ...
+	'Best_DMcommand'); 
 
 sock = tcpip('0.0.0.0', 18080, 'NetworkRole', 'server');
 disp('ok go.'); 
@@ -48,7 +48,7 @@ while k < NN
 	% to get new draws from the optimization distro. 
 	if 1
 		if mod(k, N) == 1
-			if 0
+			if 1
 				DMcommand = Best_DMcommand'; 
 			else
 				DMcommand = zeros(97, 1); 
@@ -161,12 +161,12 @@ while k < NN
 	DMcommandStd = DMcommandStd(indx(1:100)); 
 	DMcommandHist = DMcommandHist(:, indx(1:100)); 
 	DMcommandK = DMcommandK(:, indx(1:100)); 
-	disp([DMcommandStd(1) mean(DMcommandStd) temperature*1e7 sumstd]); % display the best one. 
+	disp([DMcommandStd(1) mean(DMcommandStd) temperature*1e8 sumstd]); % display the best one. 
 
 	k = k + 1; 
 end
 	
-fname = ['../rundata/DMoptimization_950nm_20220211.mat']
+fname = ['../rundata/DMoptimization_1200nm_20220218.mat']
 save(fname, '-v7.3', 'save_*');
 
 fclose(sock); 

@@ -1,7 +1,7 @@
 %%--- 
 load('../data/calibration_flat.mat');
 load('../data/calibration_forward.mat'); % valid lenslets in the actual microscope
-load('../data/calibration_960nm_20211114_geneopt.mat');
+load('../data/calibration_960nm_20220215_geneopt.mat');
 nlenslets = sum(mask);
 % this is confusing, i know. 
 % 'mask' from calibration_flat, converts from all possible 3k centroids to
@@ -57,7 +57,7 @@ while n < 1e6
 		calibx_n = (calibx_n / 715.0); 
 		caliby_n = (caliby_n / 715.0); 
 		nlenslets_n = sum(mask); 
-		[Z,dZx,dZy] = zernikes_and_derivatives_cartesian_OSA (calibx_n, caliby_n, 7, "NaN");
+		[Z,dZx,dZy] = zernikes_and_derivatives_cartesian_OSA (calibx_n, caliby_n, 7, "zeros");
 		Z = squeeze(Z); 
 		dZx = squeeze(dZx); 
 		dZy = squeeze(dZy); 

@@ -1,6 +1,6 @@
 load('../data/calibration_forward.mat'); 
 load('../data/calibration_flat.mat'); 
-fname = '950nm_20220211';
+fname = '1200nm_20220218';
 load(['../rundata/DMoptimization_' fname '.mat']); 
 % I think the 1225 run might be bad... 
 % low SNR on the NV ND, and relatively rapid bleaching. 
@@ -31,8 +31,9 @@ if 0
 	indx = indx(1:100) + sta + len - 2000 - 2; 
 else
 	% some of these runs are crappy & have little / no bleaching. 
-	[~, indx] = sort(frames_sum(12000:39e3), 'descend');
-	indx = indx(1:200) + 12000 - 1; 
+    sta = 50e3;
+	[~, indx] = sort(frames_sum(sta:end), 'descend');
+	indx = indx(1:200) + sta - 1; 
 end
 hold on; 
 plot(indx, frames_sum(indx), 'ro'); 
