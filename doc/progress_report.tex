@@ -15,7 +15,7 @@
  }
 
 %opening
-\title{Synaptic Imaging progress report}
+\title{Adaptive optics 2-photon microscope for neural imaging}
 \author{Tim Hanson, Filip Tomaska, Anthony Leonardo, jET team}
 
 \begin{document}
@@ -30,7 +30,7 @@
 
 The goal of this project is to be able to measure synaptic weights -- that is, the effective coupling between pre- and post synapse -- in vivo, across a large number of synapses.  We also aim to measure the \textit{change} in synaptic weights as effected by learning or perception, on long and short time scales, respectively.  
 
-Synapses are small, and labelling them is hard / yields few photons.  Based on these challenges, we have developed an Adaptive-Optics microscope, based around a MEMS deformable mirror, to optimize excitation and collection \textit{in vivo}.  To optically measure pre- and post-synaptic activity, you need multiple fluorescent indicators; to this end, the microscope is designed for dual-wavelength excitation and detection.  
+Synapses are small, and labelling them is hard / yields few photons.  Based on these challenges, we have developed an Adaptive-Optics microscope to optimize excitation and collection \textit{in vivo}. The adaptive element is a MEMS deformable mirror made by Alpao inc.  To optically measure pre- and post-synaptic activity, you need multiple fluorescent indicators; to this end, the microscope is designed for dual-wavelength excitation and detection.
 
 We have primarily been experimenting with GluSnFR3 as a proxy for presynaptic activity (glutamate release) and jRGECO1a as a postsynaptic calcium indicator in cranial windowed mice.  Preliminary data from this and from experiments with far-red HaloCamp will be presented.  
 
@@ -113,13 +113,15 @@ When removed, this reference light has a second purpose: levelling the cranial w
 \end{figure}
 
 
-As the initial window-leveling goniometer did not permit large range of motion about the cranial window, and windows over the mouse visual cortex tended to have significant angle, we designed a custom rotation stage for levelling the window, shown in figure \ref{window_level}.  This device is fabricated using waterjet cutting from 1/2`` stainless steel, and allows correction of up to $\pm 15^{\circ}$ in two directions. 
+As the initial window-leveling goniometer did not permit large range of motion about the cranial window, and windows over the mouse visual cortex tended to have significant angle, we designed a custom rotation stage for levelling the window, shown in figure \ref{window_level}.  This device is fabricated using waterjet cutting from 1/2`` stainless steel, and allows correction of up to $\pm 15$ in two directions.
 
 \begin{figure}
 \label{window_level}
 \centering
-\includegraphics[width=4in]{window_levelling_CAD.png}
-\caption{Window-levelling goniometer for rotating the mouse, headmount, and anesthesia system about the cranial window. }
+\includegraphics[width=4in]{CAD_window_levelling.png}
+\caption{Window-levelling goniometer that rotates the mouse, headmount, and anesthesia system about the cranial window.
+	Subject can be yawed / tilted $ \pm 15^{\circ}$ without affecting Z-focus.
+}
 \end{figure}
 
 \subsection{Software control}
@@ -169,7 +171,7 @@ Initial results here too!  Enough change in fluorescence to measure.
 
 \subsection{jRGECO1a x GluSnFR3}
 
-Very preliminary results here.  Yet it does seem to be working. 
+Very preliminary results here.  Works well enough.
 
 \section{Conclusions}
 

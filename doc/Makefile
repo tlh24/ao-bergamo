@@ -1,7 +1,7 @@
 # makefile. 
 
 
-OBJS = optical_schematic.pdf layout.pdf
+OBJS = optical_schematic.pdf layout.pdf CAD_layout.pdf
 #order matters here! 
 SRC = $(OBJS:.pdf=.svg)
 
@@ -9,8 +9,12 @@ SRC = $(OBJS:.pdf=.svg)
 
 .svg.pdf:
 	inkscape $< --export-pdf=$@
+
+.tex.pdf:
+	pdflatex $<
 	
-all: $(OBJS)
+all: $(OBJS) progress_report.pdf
 
 clean:
 	rm -rf $(OBJS)
+	rm -rf *.aux progress_report.log
