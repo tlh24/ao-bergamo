@@ -13,7 +13,7 @@ SRC = $(OBJS:.pdf=.svg)
 .tex.pdf:
 	pdflatex $<
 	
-all: $(OBJS) progress_report.pdf
+all: $(OBJS) ao_bergamo.pdf
 
 clean:
 	rm -rf $(OBJS)
